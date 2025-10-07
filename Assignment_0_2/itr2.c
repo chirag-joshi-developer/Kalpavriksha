@@ -4,6 +4,7 @@
 
 #define FILE_NAME "users.txt"
 #define NAME_LENGTH 100
+#define LINE_LENGTH 10000
 
 typedef struct {
     int id;
@@ -11,52 +12,67 @@ typedef struct {
     int age;
 } User;
 
+void flushInput() {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF);
+}
+
 void createUser() {
     FILE *file = fopen(FILE_NAME, "r");
     if (!file) {
-        printf("File not found. Creating a new one...\n");
         FILE *temp = fopen(FILE_NAME, "w");
-        if (!temp) {
-            printf("Error creating file.\n");
-            return;
-        }
+        if (!temp) return;
         fclose(temp);
         file = fopen(FILE_NAME, "r");
     }
 
-    int id = 0;
+    int id;
     printf("Enter user ID:\n");
     scanf("%d", &id);
+    getchar();
 
+    char line[LINE_LENGTH];
     User u;
-    while (fscanf(file, "%d|%[^|]|%d\n", &u.id, u.name, &u.age) == 3) {
-        if (u.id == id) {
-            printf("\nUser with this ID already exists.\n");
-            fclose(file);
-            return;
+    while (fgets(line, sizeof(line), file)) {
+        if (sscanf(line, "%d|%99[^|]|%d", &u.id, u.name, &u.age) == 3) {
+            if (u.id == id) {
+                printf("User with this ID already exists.\n");
+                fclose(file);
+                return;
+            }
         }
     }
     fclose(file);
 
     file = fopen(FILE_NAME, "a");
-    if (!file) {
-        printf("Error opening file for writing.\n");
-        return;
-    }
+    if (!file) return;
 
     u.id = id;
-    printf("\nEnter user full name:\n");
-    getchar();  // clear newline
-    fgets(u.name, NAME_LENGTH, stdin);
-    u.name[strcspn(u.name, "\n")] = '\0';
-
-    if (strlen(u.name) == 0) {
-        printf("Invalid name.\n");
-        fclose(file);
-        return;
+    char inputBuffer[LINE_LENGTH];
+    while (1) {
+        printf("Enter user full name (max 99 characters):\n");
+        if (!fgets(inputBuffer, sizeof(inputBuffer), stdin)) {
+            printf("Error reading input.\n");
+            fclose(file);
+            return;
+        }
+        if (inputBuffer[strlen(inputBuffer) - 1] != '\n') {
+            printf("Name too long. Max 99 characters allowed.\n");
+            flushInput();
+            continue;
+        }
+        inputBuffer[strcspn(inputBuffer, "\n")] = '\0';
+        if (strlen(inputBuffer) >= NAME_LENGTH) {
+            printf("Name too long. Max 99 characters allowed.\n");
+        } else if (strlen(inputBuffer) == 0) {
+            printf("Name cannot be empty.\n");
+        } else {
+            strcpy(u.name, inputBuffer);
+            break;
+        }
     }
 
-    printf("\nEnter user age:\n");
+    printf("Enter user age:\n");
     scanf("%d", &u.age);
     if (u.age < 0) {
         printf("Invalid age.\n");
@@ -66,20 +82,22 @@ void createUser() {
 
     fprintf(file, "%d|%s|%d\n", u.id, u.name, u.age);
     fclose(file);
-    printf("\nA new user has been added.\n");
+    printf("A new user has been added.\n");
 }
 
 void readUsers() {
     FILE *file = fopen(FILE_NAME, "r");
     if (!file) {
-        printf("\nThis file doesn't exist yet.\n");
+        printf("No users found.\n");
         return;
     }
 
+    char line[LINE_LENGTH];
     User u;
-    printf("\nAll Users:\n");
-    while (fscanf(file, "%d|%[^|]|%d\n", &u.id, u.name, &u.age) == 3) {
-        printf("\nID: %d, Name: %s, Age: %d\n", u.id, u.name, u.age);
+    printf("All Users:\n");
+    while (fgets(line, sizeof(line), file)) {
+        if (sscanf(line, "%d|%99[^|]|%d", &u.id, u.name, &u.age) == 3)
+            printf("ID: %d, Name: %s, Age: %d\n", u.id, u.name, u.age);
     }
     fclose(file);
 }
@@ -88,71 +106,96 @@ void updateUser() {
     FILE *file = fopen(FILE_NAME, "r");
     FILE *temp = fopen("temp.txt", "w");
     if (!file || !temp) {
-        printf("\nError opening file.\n");
+        printf("Error opening file.\n");
         return;
     }
 
-    int id = 0, found = 0;
-    printf("\nEnter ID to update:\n");
+    int id, found = 0;
+    printf("Enter ID to update:\n");
     scanf("%d", &id);
+    getchar();
 
+    char line[1024];
     User u;
-    while (fscanf(file, "%d|%[^|]|%d\n", &u.id, u.name, &u.age) == 3) {
-        if (u.id == id) {
-            found = 1;
-            printf("\nEnter new full name: \n");
-            getchar();
-            fgets(u.name, NAME_LENGTH, stdin);
-            u.name[strcspn(u.name, "\n")] = '\0';
 
-            printf("\nEnter new age: \n");
-            scanf("%d", &u.age);
+    while (fgets(line, sizeof(line), file)) {
+        if (sscanf(line, "%d|%99[^|]|%d", &u.id, u.name, &u.age) == 3) {
+            if (u.id == id) {
+                found = 1;
+                char inputBuffer[1024];
+                while (1) {
+                    printf("Enter new full name (max 99 characters):\n");
+                    if (!fgets(inputBuffer, sizeof(inputBuffer), stdin)) {
+                        printf("Error reading input.\n");
+                        fclose(file);
+                        fclose(temp);
+                        return;
+                    }
+                    if (inputBuffer[strlen(inputBuffer) - 1] != '\n') {
+                        printf("Name too long. Max 99 characters allowed.\n");
+                        flushInput();
+                        continue;
+                    }
+                    inputBuffer[strcspn(inputBuffer, "\n")] = '\0';
+                    if (strlen(inputBuffer) >= NAME_LENGTH) {
+                        printf("Name too long. Max 99 characters allowed.\n");
+                    } else if (strlen(inputBuffer) == 0) {
+                        printf("Name cannot be empty.\n");
+                    } else {
+                        strcpy(u.name, inputBuffer);
+                        break;
+                    }
+                }
+                printf("Enter new age:\n");
+                scanf("%d", &u.age);
+            }
+            fprintf(temp, "%d|%s|%d\n", u.id, u.name, u.age);
         }
-        fprintf(temp, "%d|%s|%d\n", u.id, u.name, u.age);
     }
 
     fclose(file);
     fclose(temp);
-
     remove(FILE_NAME);
     rename("temp.txt", FILE_NAME);
 
     if (found)
-        printf("\nUser updated successfully.\n");
+        printf("User updated successfully.\n");
     else
-        printf("\nUser with ID %d not found.\n", id);
+        printf("User with ID %d not found.\n", id);
 }
 
 void deleteUser() {
     FILE *file = fopen(FILE_NAME, "r");
     FILE *temp = fopen("temp.txt", "w");
     if (!file || !temp) {
-        printf("\nError opening file.\n");
+        printf("Error opening file.\n");
         return;
     }
 
-    int id = 0, found = 0;
-    printf("\nEnter ID to delete:\n");
+    int id, found = 0;
+    printf("Enter ID to delete:\n");
     scanf("%d", &id);
 
+    char line[LINE_LENGTH];
     User u;
-    while (fscanf(file, "%d|%[^|]|%d\n", &u.id, u.name, &u.age) == 3) {
-        if (id == u.id)
-            found = 1;
-        else
-            fprintf(temp, "%d|%s|%d\n", u.id, u.name, u.age);
+    while (fgets(line, sizeof(line), file)) {
+        if (sscanf(line, "%d|%99[^|]|%d", &u.id, u.name, &u.age) == 3) {
+            if (u.id == id)
+                found = 1;
+            else
+                fprintf(temp, "%d|%s|%d\n", u.id, u.name, u.age);
+        }
     }
 
     fclose(file);
     fclose(temp);
-
     remove(FILE_NAME);
     rename("temp.txt", FILE_NAME);
 
     if (found)
-        printf("\nUser deleted successfully.\n");
+        printf("User deleted successfully.\n");
     else
-        printf("\nUser not found.\n");
+        printf("User not found.\n");
 }
 
 int main() {
