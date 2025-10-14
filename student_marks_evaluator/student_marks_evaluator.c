@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <ctype.h>
 #define NAME_LENGTH 100
 #define INPUT_LENGTH 200
 
@@ -14,18 +13,23 @@ typedef struct {
 
 void readStudentData(int noOfStudents, char inputs[][INPUT_LENGTH]) {
     getchar();
+
     for (int i = 0; i < noOfStudents; i++) {
+
         if (fgets(inputs[i], INPUT_LENGTH, stdin) == NULL) {
-            printf("Error reading input.\n");
+            printf("Error reading input for student %d.\n", i + 1);
             exit(1);
         }
+
         if (strchr(inputs[i], '\n') == NULL) { 
-            int ch;
-            while ((ch = getchar()) != '\n' && ch != EOF);
+            int leftoverChar;
+            while ((leftoverChar = getchar()) != '\n' && leftoverChar != EOF);
         }
+
         inputs[i][strcspn(inputs[i], "\n")] = '\0';
     }
 }
+
 
 void calculateAverages(int noOfStudents, studentInfo* allStudents) {
     for (int i = 0; i < noOfStudents; i++) {
@@ -36,59 +40,89 @@ void calculateAverages(int noOfStudents, studentInfo* allStudents) {
     }
 }
 
-void parseAndStoreStudentData(int noOfStudents, char inputs[][INPUT_LENGTH], studentInfo* allStudents) {
+int parseAndStoreStudentData(int noOfStudents, char inputs[][INPUT_LENGTH], studentInfo* allStudents) {
+    int validCount = 0;
+
     for (int i = 0; i < noOfStudents; i++) {
         int parsed = sscanf(inputs[i], "%d %99[^0-9] %d %d %d",
-                            &allStudents[i].rollNo,
-                            allStudents[i].studentName,
-                            &allStudents[i].studentMarks[0],
-                            &allStudents[i].studentMarks[1],
-                            &allStudents[i].studentMarks[2]);
+                            &allStudents[validCount].rollNo,
+                            allStudents[validCount].studentName,
+                            &allStudents[validCount].studentMarks[0],
+                            &allStudents[validCount].studentMarks[1],
+                            &allStudents[validCount].studentMarks[2]);
+
         if (parsed != 5) {
-            printf("Invalid input format for student %d.\n", i + 1);
-            exit(1);
+            printf("Warning: Invalid input format for student %d. Skipping entry.\n", i + 1);
+            continue;
         }
-        if (allStudents[i].rollNo < 0 ||
-            allStudents[i].studentMarks[0] <= 0 ||
-            allStudents[i].studentMarks[1] <= 0 ||
-            allStudents[i].studentMarks[2] <= 0) {
-            printf("Invalid roll number or marks for student %d.\n", i + 1);
-            exit(1);
+
+        if (allStudents[validCount].rollNo <= 0 ||
+            allStudents[validCount].studentMarks[0] < 0 ||
+            allStudents[validCount].studentMarks[1] < 0 ||
+            allStudents[validCount].studentMarks[2] < 0) {
+            printf("Warning: Invalid roll number or marks for student %d. Skipping entry.\n", i + 1);
+            continue;
         }
-        if (strlen(allStudents[i].studentName) == 0) {
-            printf("Invalid name for student %d.\n", i + 1);
-            exit(1);
+
+        if (strlen(allStudents[validCount].studentName) == 0) {
+            printf("Warning: Invalid name for student %d. Skipping entry.\n", i + 1);
+            continue;
         }
+
+        validCount++;
     }
-    calculateAverages(noOfStudents, allStudents);
+
+    if (validCount == 0) {
+        printf("No valid student entries found.\n");
+        return 0;
+    }
+
+    calculateAverages(validCount, allStudents);
+    return validCount; 
 }
+
 
 typedef enum {
-    GRADE_A,
-    GRADE_B,
-    GRADE_C,
-    GRADE_D,
-    GRADE_F
+    A,
+    B,
+    C,
+    D,
+    F
 } Grade;
 
-Grade getGrade(float avg) {
-    if (avg >= 85.0) return GRADE_A;
-    else if (avg >= 70.0) return GRADE_B;
-    else if (avg >= 50.0) return GRADE_C;
-    else if (avg >= 35.0) return GRADE_D;
-    else return GRADE_F;
+Grade getGrade(float studentAverageMarks) {
+    if (studentAverageMarks >= 85.0) return A;
+    else if (studentAverageMarks >= 70.0) return B;
+    else if (studentAverageMarks >= 50.0) return C;
+    else if (studentAverageMarks >= 35.0) return D;
+    else return F;
 }
 
-void displayGrade(float average) {
-    Grade g = getGrade(average);
-    switch (g) {
-        case GRADE_A: printf("Grade : A\nPerformance : *****\n\n"); break;
-        case GRADE_B: printf("Grade : B\nPerformance : ****\n\n"); break;
-        case GRADE_C: printf("Grade : C\nPerformance : ***\n\n"); break;
-        case GRADE_D: printf("Grade : D\nPerformance : **\n\n"); break;
-        default: printf("Grade : F\n\n"); break;
+void displayGradeLetter(Grade grade) {
+    switch (grade) {
+        case A: printf("Grade : A\n"); break;
+        case B: printf("Grade : B\n"); break;
+        case C: printf("Grade : C\n"); break;
+        case D: printf("Grade : D\n"); break;
+        case F: printf("Grade : F\n"); break;
     }
 }
+
+void displayPerformanceStars(Grade grade) {
+    switch (grade) {
+        case A: printf("Performance : *****\n\n"); break;
+        case B: printf("Performance : ****\n\n"); break;
+        case C: printf("Performance : ***\n\n"); break;
+        case D: printf("Performance : **\n\n"); break;
+    }
+}
+
+void displayGrade(float studentAverageMarks) {
+    Grade grade = getGrade(studentAverageMarks);
+    displayGradeLetter(grade);
+    displayPerformanceStars(grade);
+}
+
 
 void displayAllStudentsDetails(int noOfStudents, studentInfo* allStudents) {
     for (int i = 0; i < noOfStudents; i++) {
