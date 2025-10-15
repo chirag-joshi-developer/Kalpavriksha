@@ -19,6 +19,21 @@ typedef struct {
     float studentAverage;
 } studentInfo;
 
+void readStudentData(int noOfStudents, char **inputs) {
+    getchar();
+    for (int i = 0; i < noOfStudents; i++) {
+        if (fgets(inputs[i], INPUT_LENGTH, stdin) == NULL) {
+            printf("Error reading input for student %d.\n", i + 1);
+            exit(1);
+        }
+        if (strchr(inputs[i], '\n') == NULL) { 
+            int leftoverChar;
+            while ((leftoverChar = getchar()) != '\n' && leftoverChar != EOF);
+        }
+        inputs[i][strcspn(inputs[i], "\n")] = '\0';
+    }
+}
+
 void calculateAverages(int noOfStudents, studentInfo* allStudents) {
     for (int i = 0; i < noOfStudents; i++) {
         allStudents[i].studentAverage = 
@@ -28,44 +43,40 @@ void calculateAverages(int noOfStudents, studentInfo* allStudents) {
     }
 }
 
-void readAndParseStudentData(int noOfStudents, studentInfo *allStudents) {
-    getchar(); 
-
+int parseAndStoreStudentData(int noOfStudents, char **inputs, studentInfo* allStudents) {
+    int validCount = 0;
     for (int i = 0; i < noOfStudents; i++) {
-        char line[INPUT_LENGTH];
+        int parsed = sscanf(inputs[i], "%d %99[^0-9] %d %d %d",
+                            &allStudents[validCount].rollNo,
+                            allStudents[validCount].studentName,
+                            &allStudents[validCount].studentMarks[0],
+                            &allStudents[validCount].studentMarks[1],
+                            &allStudents[validCount].studentMarks[2]);
 
-        if (fgets(line, INPUT_LENGTH, stdin) == NULL)
-            exit(1);
-
-        if (strchr(line, '\n') == NULL) {
-            int leftoverChar;
-            while ((leftoverChar = getchar()) != '\n' && leftoverChar != EOF);
-        }
-
-        line[strcspn(line, "\n")] = '\0';
-
-        int parsed = sscanf(line, "%d %99[^0-9] %d %d %d",
-                            &allStudents[i].rollNo,
-                            allStudents[i].studentName,
-                            &allStudents[i].studentMarks[0],
-                            &allStudents[i].studentMarks[1],
-                            &allStudents[i].studentMarks[2]);
-
-        if (parsed != 5 ||
-            allStudents[i].rollNo <= 0 ||
-            allStudents[i].studentMarks[0] < 0 ||
-            allStudents[i].studentMarks[1] < 0 ||
-            allStudents[i].studentMarks[2] < 0 ||
-            strlen(allStudents[i].studentName) == 0) {
-            printf("Invalid data for student %d, skipping.\n", i + 1);
-            i--;
+        if (parsed != 5) {
+            printf("Warning: Invalid input format for student %d. Skipping entry.\n", i + 1);
             continue;
         }
+        if (allStudents[validCount].rollNo <= 0 ||
+            allStudents[validCount].studentMarks[0] < 0 ||
+            allStudents[validCount].studentMarks[1] < 0 ||
+            allStudents[validCount].studentMarks[2] < 0) {
+            printf("Warning: Invalid roll number or marks for student %d. Skipping entry.\n", i + 1);
+            continue;
+        }
+        if (strlen(allStudents[validCount].studentName) == 0) {
+            printf("Warning: Invalid name for student %d. Skipping entry.\n", i + 1);
+            continue;
+        }
+        validCount++;
     }
-
-    calculateAverages(noOfStudents, allStudents);
+    if (validCount == 0) {
+        printf("No valid student entries found.\n");
+        return 0;
+    }
+    calculateAverages(validCount, allStudents);
+    return validCount; 
 }
-
 
 Grade getGrade(float studentAverageMarks) {
     if (studentAverageMarks >= 85.0) return A;
@@ -134,12 +145,26 @@ int main() {
         while (getchar() != '\n');
     }
 
+    char **inputs = malloc(noOfStudents * sizeof(char *));
+    for (int i = 0; i < noOfStudents; i++) {
+        inputs[i] = malloc(INPUT_LENGTH * sizeof(char));
+    }
+
+    readStudentData(noOfStudents, inputs);
+
     studentInfo *allStudents = malloc(noOfStudents * sizeof(studentInfo));
-    readAndParseStudentData(noOfStudents, allStudents);
+    int validCount = parseAndStoreStudentData(noOfStudents, inputs, allStudents);
 
-    displayAllStudentsDetails(noOfStudents, allStudents);
-    displayRollNo(noOfStudents, allStudents, 0);
+    if (validCount > 0) {
+        displayAllStudentsDetails(validCount, allStudents);
+        displayRollNo(validCount, allStudents, 0);
+    }
 
+    for (int i = 0; i < noOfStudents; i++) {
+        free(inputs[i]);
+    }
+    free(inputs);
     free(allStudents);
+
     return 0;
 }
