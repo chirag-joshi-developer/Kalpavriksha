@@ -28,14 +28,16 @@ void calculateAverages(int noOfStudents, studentInfo* allStudents) {
     }
 }
 
-void readAndParseStudentData(int noOfStudents, studentInfo *allStudents) {
+int readAndParseStudentData(int noOfStudents, studentInfo *allStudents) {
     getchar(); 
 
     for (int i = 0; i < noOfStudents; i++) {
         char line[INPUT_LENGTH];
 
-        if (fgets(line, INPUT_LENGTH, stdin) == NULL)
-            exit(1);
+        if (fgets(line, INPUT_LENGTH, stdin) == NULL) {
+            printf("Error reading input for student %d.\n", i + 1);
+            return -1; 
+        }
 
         if (strchr(line, '\n') == NULL) {
             int leftoverChar;
@@ -64,6 +66,7 @@ void readAndParseStudentData(int noOfStudents, studentInfo *allStudents) {
     }
 
     calculateAverages(noOfStudents, allStudents);
+    return 0; 
 }
 
 
