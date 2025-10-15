@@ -19,25 +19,20 @@ typedef struct {
     float studentAverage;
 } studentInfo;
 
-void readStudentData(int noOfStudents,char **inputs) {
+void readStudentData(int noOfStudents, char **inputs) {
     getchar();
-
     for (int i = 0; i < noOfStudents; i++) {
-
         if (fgets(inputs[i], INPUT_LENGTH, stdin) == NULL) {
             printf("Error reading input for student %d.\n", i + 1);
             exit(1);
         }
-
         if (strchr(inputs[i], '\n') == NULL) { 
             int leftoverChar;
             while ((leftoverChar = getchar()) != '\n' && leftoverChar != EOF);
         }
-
         inputs[i][strcspn(inputs[i], "\n")] = '\0';
     }
 }
-
 
 void calculateAverages(int noOfStudents, studentInfo* allStudents) {
     for (int i = 0; i < noOfStudents; i++) {
@@ -50,7 +45,6 @@ void calculateAverages(int noOfStudents, studentInfo* allStudents) {
 
 int parseAndStoreStudentData(int noOfStudents, char **inputs, studentInfo* allStudents) {
     int validCount = 0;
-
     for (int i = 0; i < noOfStudents; i++) {
         int parsed = sscanf(inputs[i], "%d %99[^0-9] %d %d %d",
                             &allStudents[validCount].rollNo,
@@ -63,7 +57,6 @@ int parseAndStoreStudentData(int noOfStudents, char **inputs, studentInfo* allSt
             printf("Warning: Invalid input format for student %d. Skipping entry.\n", i + 1);
             continue;
         }
-
         if (allStudents[validCount].rollNo <= 0 ||
             allStudents[validCount].studentMarks[0] < 0 ||
             allStudents[validCount].studentMarks[1] < 0 ||
@@ -71,24 +64,19 @@ int parseAndStoreStudentData(int noOfStudents, char **inputs, studentInfo* allSt
             printf("Warning: Invalid roll number or marks for student %d. Skipping entry.\n", i + 1);
             continue;
         }
-
         if (strlen(allStudents[validCount].studentName) == 0) {
             printf("Warning: Invalid name for student %d. Skipping entry.\n", i + 1);
             continue;
         }
-
         validCount++;
     }
-
     if (validCount == 0) {
         printf("No valid student entries found.\n");
         return 0;
     }
-
     calculateAverages(validCount, allStudents);
     return validCount; 
 }
-
 
 Grade getGrade(float studentAverageMarks) {
     if (studentAverageMarks >= 85.0) return A;
