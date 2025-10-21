@@ -6,22 +6,22 @@
 #define MINIMUM_RANDOM_SIZE 0
 #define MAXIMUM_RANDOM_SIZE 255
 
-void swapElements(int *a, int *b) {
-    int temp = *a;
-    *a = *b;
-    *b = temp;
+void swapElements(int *firstElement, int *secondElement) {
+    int temp = *firstElement;
+    *firstElement = *secondElement;
+    *secondElement = temp;
 }
 
 void displayMatrix(const int *matrix, int matrixSize) {
-    for (int i = 0; i < matrixSize; i++) {
-        for (int j = 0; j < matrixSize; j++) {
-            printf("%4d", *(matrix + i * matrixSize + j));
+    for (int row = 0; row < matrixSize; row++) {
+        for (int column = 0; column < matrixSize; column++) {
+            printf("%4d", *(matrix + row * matrixSize + column));
         }
         printf("\n");
     }
 }
 
-void fillMatrixRandomly(int *matrix, int matrixSize, int minimumVal, int maximumVal) {
+void generateMatrix(int *matrix, int matrixSize, int minimumVal, int maximumVal) {
     for (int i = 0; i < matrixSize; i++) {
         for (int j = 0; j < matrixSize; j++) {
             *(matrix + i * matrixSize + j) = minimumVal + rand() % (maximumVal - minimumVal + 1);
@@ -64,7 +64,7 @@ void applyMeanSmoothing(int *matrix, int matrixSize) {
                 }
             }
 
-            *(temp + i * matrixSize + j) = sum / count;
+            *(temp + i * matrixSize + j) = (int)((float)sum / count + 0.5f);
         }
     }
 
@@ -93,7 +93,7 @@ int main(void) {
 
     srand((unsigned)time(NULL));
 
-    fillMatrixRandomly(matrixPtr, matrixSize, MINIMUM_RANDOM_SIZE, MAXIMUM_RANDOM_SIZE);
+    generateMatrix(matrixPtr, matrixSize, MINIMUM_RANDOM_SIZE, MAXIMUM_RANDOM_SIZE);
 
     printf("\nOriginal Matrix:\n\n");
     displayMatrix(matrixPtr, matrixSize);
