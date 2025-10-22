@@ -2,9 +2,10 @@
 #include <stdlib.h>
 #include <time.h>
 
+#define MINIMUM_SIZE_INPUT 2
 #define MAXIMUM_SIZE_INPUT 10
-#define MINIMUM_RANDOM_SIZE 0
-#define MAXIMUM_RANDOM_SIZE 255
+#define MINIMUM_PIXEL_SIZE 0
+#define MAXIMUM_PIXEL_SIZE 255
 
 void swapElements(int *firstElement, int *secondElement) {
     int temp = *firstElement;
@@ -78,11 +79,11 @@ void applyMeanSmoothing(int *matrix, int matrixSize) {
 int main(void) {
     int matrixSize;
 
-    printf("Enter matrix size (2-%d): ", MAXIMUM_SIZE_INPUT);
-    while (scanf("%d", &matrixSize) != 1 || matrixSize < 2 || matrixSize > MAXIMUM_SIZE_INPUT) {
-        fprintf(stderr, "Invalid size. Must be between 2 and %d.\n", MAXIMUM_SIZE_INPUT);
+    printf("Enter matrix size between (%d-%d): ",MINIMUM_SIZE_INPUT ,MAXIMUM_SIZE_INPUT);
+    while (scanf("%d", &matrixSize) != 1 || matrixSize < MINIMUM_SIZE_INPUT || matrixSize > MAXIMUM_SIZE_INPUT) {
+        fprintf(stderr, "Invalid size. Must be between %d and %d.\n",MINIMUM_SIZE_INPUT ,MAXIMUM_SIZE_INPUT);
         while (getchar() != '\n');
-        printf("Enter matrix size (2-%d): ", MAXIMUM_SIZE_INPUT);
+        printf("Enter matrix size between (%d-%d):",MINIMUM_SIZE_INPUT ,MAXIMUM_SIZE_INPUT);
     }
 
     int *matrixPtr = (int *)malloc(matrixSize * matrixSize * sizeof(int));
@@ -93,7 +94,7 @@ int main(void) {
 
     srand((unsigned)time(NULL));
 
-    generateMatrix(matrixPtr, matrixSize, MINIMUM_RANDOM_SIZE, MAXIMUM_RANDOM_SIZE);
+    generateMatrix(matrixPtr, matrixSize, MINIMUM_PIXEL_SIZE, MAXIMUM_PIXEL_SIZE);
 
     printf("\nOriginal Matrix:\n\n");
     displayMatrix(matrixPtr, matrixSize);
