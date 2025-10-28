@@ -3,17 +3,17 @@
 #include <string.h>
 #include <ctype.h>
 
-#define PRODUCTNAMEMAXIMUMLENGTH 51
-#define MINIMUMPRODUCTID 1
-#define MAXIMUMPRODCTID 1000
-#define MINIMUMPRODUCTPRICE 0
-#define MAXIMUMPRODUCTPRICE 100000
-#define MINIMUMPRODUCTQUANTITY 0
-#define MAXIMUMPRODUCTQUANTITY 1000000
+#define PRODUCT_NAME_MAXIMUM_LENGTH 51
+#define MINIMUM_PRODUCT_ID 1
+#define MAXIMUM_PRODUCT_ID 10000
+#define MINIMUM_PRODUCT_PRICE 0
+#define MAXIMUM_PRODUCT_PRICE 100000
+#define MINIMUM_PRODUCT_QUANTITY 0
+#define MAXIMUM_PRODUCT_QUANTITY 1000000
 
 typedef struct {
     int productId;
-    char productName[PRODUCTNAMEMAXIMUMLENGTH];
+    char productName[PRODUCT_NAME_MAXIMUM_LENGTH];
     long productPrice;
     long productQuantity;
 } productInfo;
@@ -34,42 +34,92 @@ productInfo* findProductFromInventoryByID(productInfo* inventory, int productID,
     return NULL;
 }
 
-void readAndStoreInitialData(productInfo* inventory, int numberOfProductsInStore) {
-    for (int i = 0; i < numberOfProductsInStore; i++) {
+void toLowerCase(char* str) {
+    for (int i = 0; str[i]; i++) {
+        str[i] = tolower(str[i]);
+    }
+}
+
+int findProductFromInventoryByName(productInfo* inventory, char* name, int totalProducts) {
+    char tempName1[PRODUCT_NAME_MAXIMUM_LENGTH];
+    char tempName2[PRODUCT_NAME_MAXIMUM_LENGTH];
+
+    strcpy(tempName1, name);
+    toLowerCase(tempName1);
+
+    for (int i = 0; i < totalProducts; i++) {
+        strcpy(tempName2, inventory[i].productName);
+        toLowerCase(tempName2);
+
+        if (strcmp(tempName1, tempName2) == 0) {
+            return 1; 
+        }
+    }
+    return 0; 
+}
+
+
+void readAndStoreInitialData(productInfo* inventory, int numberOfProductsInStore,int startingPoint) {
+    int currentProductCount = startingPoint;
+    for (int i = startingPoint; i < numberOfProductsInStore; i++) {
         productInfo* current = inventory + i;
         printf("\nEnter details for product %d\n", i + 1);
 
-        printf("Enter Product ID (%d-%d): ", MINIMUMPRODUCTID, MAXIMUMPRODCTID);
-        if (scanf("%d", &(current->productId)) != 1 ||
-            current->productId < MINIMUMPRODUCTID ||
-            current->productId > MAXIMUMPRODCTID) {
-            printf("Invalid Product ID. Setting default ID = %d\n", MINIMUMPRODUCTID);
-            current->productId = MINIMUMPRODUCTID;
+        printf("Enter Product ID (%d-%d): ", MINIMUM_PRODUCT_ID, MAXIMUM_PRODUCT_ID);
+        int temporaryProductId;
+        char temporaryProductName [51];
+
+        while (scanf("%d", &temporaryProductId) != 1 ||
+            temporaryProductId < MINIMUM_PRODUCT_ID ||
+            temporaryProductId > MAXIMUM_PRODUCT_ID) {
+            printf("Invalid Product ID\n");
+            printf("Enter Product ID (%d-%d): ", MINIMUM_PRODUCT_ID, MAXIMUM_PRODUCT_ID);
             while (getchar() != '\n');
+        }
+        currentProductCount++;
+        if(findProductFromInventoryByID(inventory, temporaryProductId, currentProductCount)){
+            printf("Product of this id already exists\n");
+            printf("Enter product details again \n");
+            i--;
+            continue;
+        }
+        else{
+            current->productId = temporaryProductId;
         }
 
         printf("Enter Product Name: ");
-        scanf(" %[^\n]", current->productName);
-        if (strlen(current->productName) == 0 || strlen(current->productName) >= PRODUCTNAMEMAXIMUMLENGTH) {
-            printf("Invalid Product Name Length. Setting default name = 'Unknown'\n");
-            strcpy(current->productName, "Unknown");
+        while (1) {
+            while (getchar() != '\n');
+            if (fgets(temporaryProductName, PRODUCT_NAME_MAXIMUM_LENGTH, stdin) == NULL) {
+                printf("Input error. Try again:\n");
+                continue;
+            }
+            temporaryProductName[strcspn(temporaryProductName, "\n")] = '\0';
+            break;
         }
-
-        printf("Enter Product Price (%d-%d): ", MINIMUMPRODUCTPRICE, MAXIMUMPRODUCTPRICE);
-        if (scanf("%ld", &(current->productPrice)) != 1 ||
-            current->productPrice < MINIMUMPRODUCTPRICE ||
-            current->productPrice > MAXIMUMPRODUCTPRICE) {
-            printf("Invalid Price. Setting default price = %d\n", MINIMUMPRODUCTPRICE);
-            current->productPrice = MINIMUMPRODUCTPRICE;
+        if (findProductFromInventoryByName(inventory, temporaryProductName, currentProductCount)) {
+            printf("Product with this name already exists.\n");
+            printf("Enter product details again.\n");
+            i--;
+            continue;
+        } else {
+            strcpy(current->productName, temporaryProductName);
+        }
+        printf("Enter Product Price (%d-%d): ", MINIMUM_PRODUCT_PRICE, MAXIMUM_PRODUCT_PRICE);
+        while(scanf("%ld", &(current->productPrice)) != 1 ||
+            current->productPrice < MINIMUM_PRODUCT_PRICE ||
+            current->productPrice > MAXIMUM_PRODUCT_PRICE) {
+            printf("Invalid Price\n");
+            printf("Enter Product Price (%d-%d): ", MINIMUM_PRODUCT_PRICE, MAXIMUM_PRODUCT_PRICE);
             while (getchar() != '\n');
         }
 
-        printf("Enter Product Quantity (%d-%d): ", MINIMUMPRODUCTQUANTITY, MAXIMUMPRODUCTQUANTITY);
-        if (scanf("%ld", &(current->productQuantity)) != 1 ||
-            current->productQuantity < MINIMUMPRODUCTQUANTITY ||
-            current->productQuantity > MAXIMUMPRODUCTQUANTITY) {
-            printf("Invalid Quantity. Setting default quantity = %d\n", MINIMUMPRODUCTQUANTITY);
-            current->productQuantity = MINIMUMPRODUCTQUANTITY;
+        printf("Enter Product Quantity (%d-%d): ", MINIMUM_PRODUCT_QUANTITY, MAXIMUM_PRODUCT_QUANTITY);
+        while(scanf("%ld", &(current->productQuantity)) != 1 ||
+            current->productQuantity < MINIMUM_PRODUCT_QUANTITY ||
+            current->productQuantity > MAXIMUM_PRODUCT_QUANTITY) {
+            printf("Invalid Quantity.\n");
+            printf("Enter Product Quantity (%d-%d): ", MINIMUM_PRODUCT_QUANTITY, MAXIMUM_PRODUCT_QUANTITY);
             while (getchar() != '\n');
         }
     }
@@ -82,39 +132,66 @@ void addNewProduct(productInfo** inventory, int* numberOfProductsInStore) {
         return;
     }
 
+    int temporaryProductId;
+    char *temporaryProductName = (char*)malloc(PRODUCT_NAME_MAXIMUM_LENGTH*sizeof(char));
+
     productInfo* newProduct = *inventory + *numberOfProductsInStore;
 
-    printf("Enter Product ID (%d-%d): ", MINIMUMPRODUCTID, MAXIMUMPRODCTID);
-    if (scanf("%d", &(newProduct->productId)) != 1 ||
-        newProduct->productId < MINIMUMPRODUCTID ||
-        newProduct->productId > MAXIMUMPRODCTID) {
-        printf("Invalid Product ID. Setting default ID = %d\n", MINIMUMPRODUCTID);
-        newProduct->productId = MINIMUMPRODUCTID;
+    printf("Enter Product ID (%d-%d): ", MINIMUM_PRODUCT_ID, MAXIMUM_PRODUCT_ID);
+    while(scanf("%d", &temporaryProductId) != 1 ||
+        temporaryProductId < MINIMUM_PRODUCT_ID ||
+        temporaryProductId > MAXIMUM_PRODUCT_ID) {
+        printf("Invalid Product ID.");
+        printf("Enter Product ID (%d-%d): ", MINIMUM_PRODUCT_ID, MAXIMUM_PRODUCT_ID);
         while (getchar() != '\n');
+    }
+
+    if(findProductFromInventoryByID(*inventory, temporaryProductId, *numberOfProductsInStore)){
+        printf("Product of this id already exists\n");
+        printf("Enter product details again \n");
+        addNewProduct(inventory,numberOfProductsInStore);
+        return;
+    }
+    else{
+        newProduct->productId = temporaryProductId;
     }
 
     printf("Enter Product Name: ");
-    scanf(" %[^\n]", newProduct->productName);
-    if (strlen(newProduct->productName) == 0 || strlen(newProduct->productName) >= PRODUCTNAMEMAXIMUMLENGTH) {
-        printf("Invalid Product Name Length. Setting default name = 'Unknown'\n");
-        strcpy(newProduct->productName, "Unknown");
+    while (1) {
+        while (getchar() != '\n');
+        if (fgets(temporaryProductName, PRODUCT_NAME_MAXIMUM_LENGTH, stdin) == NULL) {
+            printf("Input error. Try again:\n");
+            continue;
+        }
+        temporaryProductName[strcspn(temporaryProductName, "\n")] = '\0';
+        break;
+    }
+    
+    if (findProductFromInventoryByName(*inventory, temporaryProductName, *numberOfProductsInStore)) {
+        printf("Product with this name already exists.\n");
+        printf("Enter product details again.\n");
+        addNewProduct(inventory, numberOfProductsInStore);
+        free(temporaryProductName);
+        return;
+    } else {
+        strcpy(newProduct->productName, temporaryProductName);
     }
 
-    printf("Enter Product Price (%d-%d): ", MINIMUMPRODUCTPRICE, MAXIMUMPRODUCTPRICE);
-    if (scanf("%ld", &(newProduct->productPrice)) != 1 ||
-        newProduct->productPrice < MINIMUMPRODUCTPRICE ||
-        newProduct->productPrice > MAXIMUMPRODUCTPRICE) {
-        printf("Invalid Price. Setting default = %d\n", MINIMUMPRODUCTPRICE);
-        newProduct->productPrice = MINIMUMPRODUCTPRICE;
+    printf("Enter Product Price (%d-%d): ", MINIMUM_PRODUCT_PRICE, MAXIMUM_PRODUCT_PRICE);
+    while(scanf("%ld", &(newProduct->productPrice)) != 1 ||
+        newProduct->productPrice < MINIMUM_PRODUCT_PRICE ||
+        newProduct->productPrice > MAXIMUM_PRODUCT_PRICE) {
+        printf("Invalid Price.\n"); 
+        printf("Enter Product Price (%d-%d): ", MINIMUM_PRODUCT_PRICE, MAXIMUM_PRODUCT_PRICE);
         while (getchar() != '\n');
     }
 
-    printf("Enter Product Quantity (%d-%d): ", MINIMUMPRODUCTQUANTITY, MAXIMUMPRODUCTQUANTITY);
-    if (scanf("%ld", &(newProduct->productQuantity)) != 1 ||
-        newProduct->productQuantity < MINIMUMPRODUCTQUANTITY ||
-        newProduct->productQuantity > MAXIMUMPRODUCTQUANTITY) {
-        printf("Invalid Quantity. Setting default = %d\n", MINIMUMPRODUCTQUANTITY);
-        newProduct->productQuantity = MINIMUMPRODUCTQUANTITY;
+    printf("Enter Product Quantity (%d-%d): ", MINIMUM_PRODUCT_QUANTITY, MAXIMUM_PRODUCT_QUANTITY);
+    while(scanf("%ld", &(newProduct->productQuantity)) != 1 ||
+        newProduct->productQuantity < MINIMUM_PRODUCT_QUANTITY ||
+        newProduct->productQuantity > MAXIMUM_PRODUCT_QUANTITY) {
+        printf("Invalid Quantity.");
+        printf("Enter Product Quantity (%d-%d): ", MINIMUM_PRODUCT_QUANTITY, MAXIMUM_PRODUCT_QUANTITY);
         while (getchar() != '\n');
     }
 
@@ -143,20 +220,14 @@ void updateProductQuantity(productInfo* inventory, int numberOfProductsInStore) 
         return;
     }
 
-    printf("Enter new quantity (%d-%d): ", MINIMUMPRODUCTQUANTITY, MAXIMUMPRODUCTQUANTITY);
+    printf("Enter new quantity (%d-%d): ", MINIMUM_PRODUCT_QUANTITY, MAXIMUM_PRODUCT_QUANTITY);
     if (scanf("%ld", &(product->productQuantity)) != 1 ||
-        product->productQuantity < MINIMUMPRODUCTQUANTITY ||
-        product->productQuantity > MAXIMUMPRODUCTQUANTITY) {
+        product->productQuantity < MINIMUM_PRODUCT_QUANTITY ||
+        product->productQuantity > MAXIMUM_PRODUCT_QUANTITY) {
         printf("Invalid quantity. Quantity unchanged.\n");
         while (getchar() != '\n');
     } else {
         printf("Quantity updated successfully.\n");
-    }
-}
-
-void toLowerCase(char* str) {
-    for (int i = 0; str[i]; i++) {
-        str[i] = tolower(str[i]);
     }
 }
 
@@ -174,17 +245,17 @@ void searchProductByID(productInfo* inventory, int numberOfProductsInStore) {
 }
 
 void searchProductByName(productInfo* inventory, int numberOfProductsInStore) {
-    char name[PRODUCTNAMEMAXIMUMLENGTH];
+    char *name = (char*) malloc(PRODUCT_NAME_MAXIMUM_LENGTH*sizeof(char));
     printf("Enter part or full Product Name to search: ");
     scanf(" %[^\n]", name);
 
-    char searchTerm[PRODUCTNAMEMAXIMUMLENGTH];
+    char searchTerm[PRODUCT_NAME_MAXIMUM_LENGTH];
     strcpy(searchTerm, name);
     toLowerCase(searchTerm);
 
     int found = 0;
     for (int i = 0; i < numberOfProductsInStore; i++) {
-        char productNameLower[PRODUCTNAMEMAXIMUMLENGTH];
+        char productNameLower[PRODUCT_NAME_MAXIMUM_LENGTH];
         strcpy(productNameLower, inventory[i].productName);
         toLowerCase(productNameLower);
 
@@ -244,16 +315,16 @@ void deleteProduct(productInfo* inventory, int* numberOfProductsInStore) {
 int main() {
     int numberOfProductsInStore = 0;
     printf("Enter the initial number of products: ");
-    if (scanf("%d", &numberOfProductsInStore) != 1 ||
+    while(scanf("%d", &numberOfProductsInStore) != 1 ||
         numberOfProductsInStore <= 0 ||
         numberOfProductsInStore > 100) {
-        printf("Invalid number entered. Defaulting to 1.\n");
-        numberOfProductsInStore = 1;
+        printf("Invalid initial number entered it must be between 1 and 100.\n");
         while (getchar() != '\n');
+        printf("Enter the initial number of products: ");
     }
 
     productInfo* inventory = (productInfo*) calloc(numberOfProductsInStore, sizeof(productInfo));
-    readAndStoreInitialData(inventory, numberOfProductsInStore);
+    readAndStoreInitialData(inventory, numberOfProductsInStore,0);
 
     int operation = 0;
     do {
@@ -291,7 +362,7 @@ int main() {
                 deleteProduct(inventory, &numberOfProductsInStore);
                 break;
             case 8:
-                printf("Exiting program...\n");
+                printf("Exiting program\n");
                 free(inventory);
                 break;
             default:
