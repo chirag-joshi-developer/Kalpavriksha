@@ -126,10 +126,13 @@ void readAndStoreInitialData(productInfo* inventory, int numberOfProductsInStore
 }
 
 void addNewProduct(productInfo** inventory, int* numberOfProductsInStore) {
-    *inventory = realloc(*inventory, (*numberOfProductsInStore + 1) * sizeof(productInfo));
-    if (*inventory == NULL) {
+    productInfo * temp = realloc(*inventory, (*numberOfProductsInStore + 1) * sizeof(productInfo)); 
+    if (temp == NULL) {
         printf("Memory allocation failed. Returning to main menu.\n");
         return;
+    }
+    else{
+        *inventory = temp;
     }
 
     int temporaryProductId;
