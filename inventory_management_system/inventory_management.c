@@ -289,14 +289,14 @@ void searchProductByPriceRange(productInfo* inventory, int numberOfProductsInSto
     if (!found) printf("No products found in this price range.\n");
 }
 
-void deleteProduct(productInfo* inventory, int* numberOfProductsInStore) {
+void deleteProduct(productInfo** inventory, int* numberOfProductsInStore) {
     int id;
     printf("Enter Product ID to delete: ");
     scanf("%d", &id);
 
     int foundIndex = -1;
     for (int i = 0; i < *numberOfProductsInStore; i++) {
-        if ((inventory+i)->productId == id) {
+        if (((*inventory)+i)->productId == id) {
             foundIndex = i;
             break;
         }
@@ -308,15 +308,25 @@ void deleteProduct(productInfo* inventory, int* numberOfProductsInStore) {
     }
 
     for (int i = foundIndex; i < *numberOfProductsInStore - 1; i++) {
-        inventory[i] = inventory[i + 1];
+        *((*inventory)+i) = *(*inventory+(i + 1));
     }
 
     (*numberOfProductsInStore)--;
+    if(*numberOfProductsInStore == 0){
+        free(*inventory);
+        *inventory = NULL;
+        printf("Last product deleted successfully memory is freed.\n");
+        return;
+    }
     
-    productInfo* temp = (productInfo*)realloc(inventory,(*numberOfProductsInStore)*sizeof(productInfo));
+    productInfo* temp = (productInfo*)realloc(*inventory,(*numberOfProductsInStore)*sizeof(productInfo));
     
-    if(temp != NULL || numberOfProductsInStore == 0){
-        inventory = temp;
+    if(temp != NULL ){
+        *inventory = temp;
+    }
+    else{
+        printf("Product deleted but memory reallocation failed ");
+        return;
     }
     
     printf("Product deleted successfully.\n");
@@ -369,7 +379,7 @@ int main() {
                 searchProductByPriceRange(inventory, numberOfProductsInStore);
                 break;
             case 7:
-                deleteProduct(inventory, &numberOfProductsInStore);
+                deleteProduct(&inventory, &numberOfProductsInStore);
                 break;
             case 8:
                 printf("Exiting program\n");
