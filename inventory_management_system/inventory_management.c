@@ -256,11 +256,11 @@ void searchProductByName(productInfo* inventory, int numberOfProductsInStore) {
     int found = 0;
     for (int i = 0; i < numberOfProductsInStore; i++) {
         char productNameLower[PRODUCT_NAME_MAXIMUM_LENGTH];
-        strcpy(productNameLower, inventory[i].productName);
+        strcpy(productNameLower, (inventory+i)->productName);
         toLowerCase(productNameLower);
 
         if (strstr(productNameLower, searchTerm)) {
-            displayProductData(&inventory[i]);
+            displayProductData((inventory+i));
             found = 1;
         }
     }
@@ -277,8 +277,8 @@ void searchProductByPriceRange(productInfo* inventory, int numberOfProductsInSto
 
     int found = 0;
     for (int i = 0; i < numberOfProductsInStore; i++) {
-        if (inventory[i].productPrice >= lower && inventory[i].productPrice <= upper) {
-            displayProductData(&inventory[i]);
+        if ((inventory+i)->productPrice >= lower && (inventory+i)->productPrice <= upper) {
+            displayProductData((inventory+i));
             found = 1;
         }
     }
@@ -293,7 +293,7 @@ void deleteProduct(productInfo* inventory, int* numberOfProductsInStore) {
 
     int foundIndex = -1;
     for (int i = 0; i < *numberOfProductsInStore; i++) {
-        if (inventory[i].productId == id) {
+        if ((inventory+i)->productId == id) {
             foundIndex = i;
             break;
         }
@@ -309,6 +309,13 @@ void deleteProduct(productInfo* inventory, int* numberOfProductsInStore) {
     }
 
     (*numberOfProductsInStore)--;
+    
+    productInfo* temp = (productInfo*)realloc(inventory,(*numberOfProductsInStore)*sizeof(productInfo));
+    
+    if(temp != NULL || numberOfProductsInStore == 0){
+        inventory = temp;
+    }
+    
     printf("Product deleted successfully.\n");
 }
 
