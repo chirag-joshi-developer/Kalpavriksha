@@ -8,30 +8,31 @@
 #define FILE_NAME_MAXIMUM_SIZE 51
 #define FILE_NAME_MINIMUM_SIZE 1
 #define MAXIMUM_COMMAND_LENGTH 512
+#define MAXIMUM_DATA_LENGTH 512000
 
-typedef struct freeBlock{
+typedef struct freeBlock  {
     int index;
     struct freeBlock* next;
     struct freeBlock* prev;
-}freeBlock;
+} freeBlock;
 
-typedef struct fileOrDirectoryNode{
+typedef struct file_Or_Directory_Node  {
     int isFile;
     char name[FILE_NAME_MAXIMUM_SIZE];
-    struct fileOrDirectoryNode* parent;
-    struct fileOrDirectoryNode* child;
-    struct fileOrDirectoryNode* next;
-    struct fileOrDirectoryNode* prev;
+    struct file_Or_Directory_Node* parent;
+    struct file_Or_Directory_Node* child;
+    struct file_Or_Directory_Node* next;
+    struct file_Or_Directory_Node* prev;
     int blockPointer[NUMBER_OF_BLOCKS];
     int sizeOfTheFile;
     int totalBlockCOUNT;
-}fileOrDirectoryNode;
+} file_Or_Directory_Node;
 
 freeBlock* freeBlocksHead = NULL;
 freeBlock* freeBlocksTail = NULL;
 
-fileOrDirectoryNode* root = NULL;
-fileOrDirectoryNode* cwd = NULL;
+file_Or_Directory_Node* root = NULL;
+file_Or_Directory_Node* cwd = NULL;
 
 int usedBlockCount = 0;
 
@@ -52,7 +53,7 @@ void ShowCurrentDirectory();
 void ShowDiskImage();
 void TerminateProgram();
 
-char* trim(char *s) {
+char* trim(char *s)  {
     if (!s) return s;
     while(isspace((unsigned char)*s)) s++;
     if (*s == 0) return s;
@@ -62,17 +63,17 @@ char* trim(char *s) {
     return s;
 }
 
-fileOrDirectoryNode* find_child(fileOrDirectoryNode *parent, const char *name) {
+file_Or_Directory_Node* find_child(file_Or_Directory_Node *parent, const char *name)  {
     if (!parent || !parent->child) return NULL;
-    fileOrDirectoryNode *cur = parent->child;
-    do {
+    file_Or_Directory_Node *cur = parent->child;
+    do  {
         if (strcmp(cur->name, name) == 0) return cur;
         cur = cur->next;
     } while(cur != parent->child);
     return NULL;
 }
 
-int allocate_block_from_head() {
+int allocate_block_from_head()  {
     if (!freeBlocksHead) return -1;
     freeBlock *n = freeBlocksHead;
     int idx = n->index;
@@ -84,9 +85,9 @@ int allocate_block_from_head() {
     return idx;
 }
 
-void free_block_to_tail(int index) {
+void free_block_to_tail(int index)  {
     freeBlock *n = (freeBlock*) malloc(sizeof(freeBlock));
-    if (!n) {
+    if (!n)  {
         fprintf(stderr, "Memory allocation failure while freeing block\n");
         return;
     }
@@ -99,21 +100,21 @@ void free_block_to_tail(int index) {
     usedBlockCount--;
 }
 
-int blocks_needed(int bytes) {
+int blocks_needed(int bytes)  {
     if (bytes <= 0) return 0;
     return (bytes + BLOCK_SIZE - 1) / BLOCK_SIZE;
 }
 
-void insert_child_node(fileOrDirectoryNode *parent, fileOrDirectoryNode *child) {
+void insert_child_node(file_Or_Directory_Node *parent, file_Or_Directory_Node *child)  {
     child->parent = parent;
     child->child = NULL;
     child->totalBlockCOUNT = 0;
     child->sizeOfTheFile = 0;
-    if (!parent->child) {
+    if (!parent->child)  {
         parent->child = child;
         child->next = child->prev = child;
-    } else {
-        fileOrDirectoryNode *tail = parent->child->prev;
+    } else  {
+        file_Or_Directory_Node *tail = parent->child->prev;
         tail->next = child;
         child->prev = tail;
         child->next = parent->child;
@@ -121,11 +122,11 @@ void insert_child_node(fileOrDirectoryNode *parent, fileOrDirectoryNode *child) 
     }
 }
 
-void remove_child_node(fileOrDirectoryNode *parent, fileOrDirectoryNode *child) {
+void remove_child_node(file_Or_Directory_Node *parent, file_Or_Directory_Node *child)  {
     if (!parent || !parent->child || !child) return;
-    if (child->next == child) {
+    if (child->next == child)  {
         parent->child = NULL;
-    } else {
+    } else  {
         if (parent->child == child) parent->child = child->next;
         child->prev->next = child->next;
         child->next->prev = child->prev;
@@ -134,9 +135,9 @@ void remove_child_node(fileOrDirectoryNode *parent, fileOrDirectoryNode *child) 
     child->parent = NULL;
 }
 
-void free_file_node(fileOrDirectoryNode *fnode) {
+void free_file_node(file_Or_Directory_Node *fnode)  {
     if (!fnode) return;
-    for (int i = 0; i < fnode->totalBlockCOUNT; ++i) {
+    for (int i = 0; i < fnode->totalBlockCOUNT; ++i)  {
         int idx = fnode->blockPointer[i];
         if (idx >= 0) free_block_to_tail(idx);
     }
@@ -144,31 +145,31 @@ void free_file_node(fileOrDirectoryNode *fnode) {
     fnode->sizeOfTheFile = 0;
 }
 
-void free_node_recursive(fileOrDirectoryNode *node) {
+void free_node_recursive(file_Or_Directory_Node *node)  {
     if (!node) return;
-    if (!node->isFile) {
-        while (node->child) {
-            fileOrDirectoryNode *ch = node->child;
+    if (!node->isFile)  {
+        while (node->child)  {
+            file_Or_Directory_Node *ch = node->child;
             remove_child_node(node, ch);
             free_node_recursive(ch);
         }
         free(node);
-    } else {
+    } else  {
         free_file_node(node);
         free(node);
     }
 }
 
-int count_free_blocks() {
+int count_free_blocks()  {
     int cnt = 0;
     freeBlock *p = freeBlocksHead;
-    while(p) { cnt++; p = p->next; }
+    while(p)  { cnt++; p = p->next; }
     return cnt;
 }
 
-char* readInput(char * command){
+char* readInput(char * command)  {
     if (!command) return NULL;
-    if (fgets(command, MAXIMUM_COMMAND_LENGTH, stdin) == NULL) {
+    if (fgets(command, MAXIMUM_DATA_LENGTH, stdin) == NULL)  {
         return NULL;
     }
     size_t L = strlen(command);
@@ -176,9 +177,9 @@ char* readInput(char * command){
     return command;
 }
 
-int initializeRootDirectory(){
-    root = (fileOrDirectoryNode*) malloc(sizeof(fileOrDirectoryNode));
-    if(!root){
+int initializeRootDirectory()  {
+    root = (file_Or_Directory_Node*) malloc(sizeof(file_Or_Directory_Node));
+    if(!root) {
         printf("Error creating root \n");
         return 0;
     }
@@ -194,20 +195,20 @@ int initializeRootDirectory(){
     return 1;
 }
 
-void initializeSystem(char** diskSpaceParam){
+void initializeSystem(char** diskSpaceParam)  {
     diskSpace = diskSpaceParam;
 
-    if(!initializeRootDirectory()){
+    if(!initializeRootDirectory()) {
         return;
     }
 
     freeBlocksHead = freeBlocksTail = NULL;
-    for(int i=0; i<NUMBER_OF_BLOCKS; i++){
+    for(int i=0; i<NUMBER_OF_BLOCKS; i++) {
         freeBlock* newBlock  = (freeBlock*) malloc(sizeof(freeBlock));
-        if(!newBlock){
+        if(!newBlock) {
             printf("Failure in memory allocation\n");
             freeBlock* temp = freeBlocksHead;
-            while(temp){
+            while(temp) {
                 freeBlock* Next = temp->next;
                 free(temp);
                 temp = Next;
@@ -218,29 +219,29 @@ void initializeSystem(char** diskSpaceParam){
         newBlock->index = i;
         newBlock->prev = freeBlocksTail;
         newBlock->next = NULL;
-        if(freeBlocksTail){
+        if(freeBlocksTail) {
             freeBlocksTail->next = newBlock;
         }
-        else{
+        else {
             freeBlocksHead = newBlock;
         }
         freeBlocksTail = newBlock;
     }
 }
 
-void mkdir(){
+void mkdir()  {
     char buf[MAXIMUM_COMMAND_LENGTH];
     printf("Enter directory name: ");
-    if (!readInput(buf)) { printf("Input error\n"); return; }
+    if (!readInput(buf))  { printf("Input error\n"); return; }
     char *name = trim(buf);
-    if (strlen(name) < FILE_NAME_MINIMUM_SIZE || strlen(name) >= FILE_NAME_MAXIMUM_SIZE) {
+    if (strlen(name) < FILE_NAME_MINIMUM_SIZE || strlen(name) >= FILE_NAME_MAXIMUM_SIZE)  {
         printf("Invalid name length.\n"); return;
     }
-    if (find_child(cwd, name)) {
+    if (find_child(cwd, name))  {
         printf("A file or directory with that name already exists.\n"); return;
     }
-    fileOrDirectoryNode *dir = (fileOrDirectoryNode*) malloc(sizeof(fileOrDirectoryNode));
-    if (!dir) { printf("Memory allocation error\n"); return; }
+    file_Or_Directory_Node *dir = (file_Or_Directory_Node*) malloc(sizeof(file_Or_Directory_Node));
+    if (!dir)  { printf("Memory allocation error\n"); return; }
     dir->isFile = 0;
     strncpy(dir->name, name, FILE_NAME_MAXIMUM_SIZE-1);
     dir->name[FILE_NAME_MAXIMUM_SIZE-1] = '\0';
@@ -253,46 +254,46 @@ void mkdir(){
     printf("Directory '%s' created successfully.\n", name);
 }
 
-void changeDirectory(){
+void changeDirectory()  {
     char buf[MAXIMUM_COMMAND_LENGTH];
     printf("Enter directory to change to: ");
-    if (!readInput(buf)) { printf("Input error\n"); return; }
+    if (!readInput(buf))  { printf("Input error\n"); return; }
     char *arg = trim(buf);
-    if (strcmp(arg, "/") == 0) {
+    if (strcmp(arg, "/") == 0)  {
         cwd = root;
         printf("Moved to /\n");
         return;
     }
-    if (strcmp(arg, "..") == 0) {
-        if (cwd->parent) {
+    if (strcmp(arg, "..") == 0)  {
+        if (cwd->parent)  {
             cwd = cwd->parent;
             if (cwd == root) printf("Moved to /\n");
             else printf("Moved to %s\n", cwd->name);
-        } else {
+        } else  {
             printf("No parent directory (already at root)\n");
         }
         return;
     }
-    fileOrDirectoryNode *target = find_child(cwd, arg);
-    if (!target) { printf("Directory '%s' not found.\n", arg); return; }
-    if (target->isFile) { printf("'%s' is not a directory.\n", arg); return; }
+    file_Or_Directory_Node *target = find_child(cwd, arg);
+    if (!target)  { printf("Directory '%s' not found.\n", arg); return; }
+    if (target->isFile)  { printf("'%s' is not a directory.\n", arg); return; }
     cwd = target;
     printf("Moved to %s\n", (cwd == root) ? "/" : cwd->name);
 }
 
-void createFile(){
+void createFile()  {
     char buf[MAXIMUM_COMMAND_LENGTH];
     printf("Enter file name: ");
-    if (!readInput(buf)) { printf("Input error\n"); return; }
+    if (!readInput(buf))  { printf("Input error\n"); return; }
     char *name = trim(buf);
-    if (strlen(name) < FILE_NAME_MINIMUM_SIZE || strlen(name) >= FILE_NAME_MAXIMUM_SIZE) {
+    if (strlen(name) < FILE_NAME_MINIMUM_SIZE || strlen(name) >= FILE_NAME_MAXIMUM_SIZE)  {
         printf("Invalid name length.\n"); return;
     }
-    if (find_child(cwd, name)) {
+    if (find_child(cwd, name))  {
         printf("A file or directory with that name already exists.\n"); return;
     }
-    fileOrDirectoryNode *f = (fileOrDirectoryNode*) malloc(sizeof(fileOrDirectoryNode));
-    if (!f) { printf("Memory allocation error\n"); return; }
+    file_Or_Directory_Node *f = (file_Or_Directory_Node*) malloc(sizeof(file_Or_Directory_Node));
+    if (!f)  { printf("Memory allocation error\n"); return; }
     f->isFile = 1;
     strncpy(f->name, name, FILE_NAME_MAXIMUM_SIZE-1);
     f->name[FILE_NAME_MAXIMUM_SIZE-1] = '\0';
@@ -306,30 +307,30 @@ void createFile(){
     printf("File '%s' created successfully.\n", name);
 }
 
-void writeFile(){
+void writeFile()  {
     char buf_name[MAXIMUM_COMMAND_LENGTH];
-    char buf_content[MAXIMUM_COMMAND_LENGTH];
+    char buf_content[MAXIMUM_DATA_LENGTH];
     printf("Enter filename: ");
-    if (!readInput(buf_name)) { printf("Input error\n"); return; }
+    if (!readInput(buf_name))  { printf("Input error\n"); return; }
     char *name = trim(buf_name);
-    fileOrDirectoryNode *f = find_child(cwd, name);
-    if (!f) { printf("File '%s' not found.\n", name); return; }
-    if (!f->isFile) { printf("'%s' is a directory.\n", name); return; }
+    file_Or_Directory_Node *f = find_child(cwd, name);
+    if (!f)  { printf("File '%s' not found.\n", name); return; }
+    if (!f->isFile)  { printf("'%s' is a directory.\n", name); return; }
 
     printf("Enter content (you may include spaces): ");
-    if (!readInput(buf_content)) { printf("Input error\n"); return; }
+    if (!readInput(buf_content))  { printf("Input error\n"); return; }
     char *content = buf_content;
 
     int bytes = (int) strlen(content);
     int neededBlocks = blocks_needed(bytes);
 
     int freeAvailable = count_free_blocks() + f->totalBlockCOUNT;
-    if (neededBlocks > freeAvailable) {
+    if (neededBlocks > freeAvailable)  {
         printf("Not enough free space. Required blocks: %d, available blocks: %d\n", neededBlocks, freeAvailable);
         return;
     }
 
-    for (int i=0;i<f->totalBlockCOUNT;i++){
+    for (int i=0;i<f->totalBlockCOUNT;i++) {
         int b = f->blockPointer[i];
         if (b >= 0) free_block_to_tail(b);
         f->blockPointer[i] = -1;
@@ -337,15 +338,15 @@ void writeFile(){
     f->totalBlockCOUNT = 0;
     f->sizeOfTheFile = 0;
 
-    if (neededBlocks == 0) {
+    if (neededBlocks == 0)  {
         printf("Data written successfully (size=0 bytes).\n");
         return;
     }
 
-    for (int i=0;i<neededBlocks;i++){
+    for (int i=0;i<neededBlocks;i++) {
         int idx = allocate_block_from_head();
-        if (idx == -1) {
-            for (int j=0;j<f->totalBlockCOUNT;j++) free_block_to_tail(f->blockPointer[j]);
+        if (idx == -1)  {
+            for (int j=0;j<f->totalBlockCOUNT;j++) { free_block_to_tail(f->blockPointer[j]); }
             f->totalBlockCOUNT = 0;
             f->sizeOfTheFile = 0;
             printf("Unexpected: ran out of blocks while writing.\n");
@@ -355,13 +356,13 @@ void writeFile(){
     }
 
     int written = 0;
-    for (int i=0;i<f->totalBlockCOUNT;i++){
+    for (int i=0;i<f->totalBlockCOUNT;i++) {
         int idx = f->blockPointer[i];
         int to_write = (bytes - written) > BLOCK_SIZE ? BLOCK_SIZE : (bytes - written);
-        if (to_write > 0) {
+        if (to_write > 0)  {
             memcpy(diskSpace[idx], content + written, (size_t)to_write);
             if (to_write < BLOCK_SIZE) memset(diskSpace[idx] + to_write, 0, BLOCK_SIZE - to_write);
-        } else {
+        } else  {
             memset(diskSpace[idx], 0, BLOCK_SIZE);
         }
         written += to_write;
@@ -370,23 +371,23 @@ void writeFile(){
     printf("Data written successfully (size=%d bytes).\n", bytes);
 }
 
-void readFile(){
+void readFile()  {
     char buf[MAXIMUM_COMMAND_LENGTH];
     printf("Enter filename to read: ");
-    if (!readInput(buf)) { printf("Input error\n"); return; }
+    if (!readInput(buf))  { printf("Input error\n"); return; }
     char *name = trim(buf);
-    fileOrDirectoryNode *f = find_child(cwd, name);
-    if (!f) { printf("File '%s' not found.\n", name); return; }
-    if (!f->isFile) { printf("'%s' is a directory.\n", name); return; }
-    if (f->totalBlockCOUNT == 0 || f->sizeOfTheFile == 0) {
+    file_Or_Directory_Node *f = find_child(cwd, name);
+    if (!f)  { printf("File '%s' not found.\n", name); return; }
+    if (!f->isFile)  { printf("'%s' is a directory.\n", name); return; }
+    if (f->totalBlockCOUNT == 0 || f->sizeOfTheFile == 0)  {
         printf("(empty)\n");
         return;
     }
     int remaining = f->sizeOfTheFile;
-    for (int i=0;i<f->totalBlockCOUNT;i++){
+    for (int i=0;i<f->totalBlockCOUNT;i++) {
         int idx = f->blockPointer[i];
         int to_read = remaining > BLOCK_SIZE ? BLOCK_SIZE : remaining;
-        if (to_read > 0) {
+        if (to_read > 0)  {
             fwrite(diskSpace[idx], 1, (size_t)to_read, stdout);
             remaining -= to_read;
         }
@@ -394,17 +395,17 @@ void readFile(){
     printf("\n");
 }
 
-void DeleteFile(){
+void DeleteFile()  {
     char buf[MAXIMUM_COMMAND_LENGTH];
     printf("Enter filename to delete: ");
-    if (!readInput(buf)) { printf("Input error\n"); return; }
+    if (!readInput(buf))  { printf("Input error\n"); return; }
     char *name = trim(buf);
-    fileOrDirectoryNode *f = find_child(cwd, name);
-    if (!f) { printf("File '%s' not found.\n", name); return; }
-    if (!f->isFile) { printf("'%s' is a directory.\n", name); return; }
+    file_Or_Directory_Node *f = find_child(cwd, name);
+    if (!f)  { printf("File '%s' not found.\n", name); return; }
+    if (!f->isFile)  { printf("'%s' is a directory.\n", name); return; }
 
     remove_child_node(cwd, f);
-    for (int i=0;i<f->totalBlockCOUNT;i++){
+    for (int i=0;i<f->totalBlockCOUNT;i++) {
         int idx = f->blockPointer[i];
         if (idx >= 0) free_block_to_tail(idx);
     }
@@ -412,26 +413,26 @@ void DeleteFile(){
     printf("File deleted successfully.\n");
 }
 
-void RemoveDirectory(){
+void RemoveDirectory()  {
     char buf[MAXIMUM_COMMAND_LENGTH];
     printf("Enter directory name to remove: ");
-    if (!readInput(buf)) { printf("Input error\n"); return; }
+    if (!readInput(buf))  { printf("Input error\n"); return; }
     char *name = trim(buf);
-    fileOrDirectoryNode *d = find_child(cwd, name);
-    if (!d) { printf("Directory '%s' not found.\n", name); return; }
-    if (d->isFile) { printf("'%s' is not a directory.\n", name); return; }
-    if (d->child) { printf("Directory '%s' is not empty.\n", name); return; }
+    file_Or_Directory_Node *d = find_child(cwd, name);
+    if (!d)  { printf("Directory '%s' not found.\n", name); return; }
+    if (d->isFile)  { printf("'%s' is not a directory.\n", name); return; }
+    if (d->child)  { printf("Directory '%s' is not empty.\n", name); return; }
     remove_child_node(cwd, d);
     free(d);
     printf("Directory removed successfully.\n");
 }
 
-void ShowCurrentDirectory(){
-    if (!cwd->child) {
+void ShowCurrentDirectory()  {
+    if (!cwd->child)  {
         printf("(empty)\n");
-    } else {
-        fileOrDirectoryNode *cur = cwd->child;
-        do {
+    } else  {
+        file_Or_Directory_Node *cur = cwd->child;
+        do  {
             if (cur->isFile) printf("%s\n", cur->name);
             else printf("%s/\n", cur->name);
             cur = cur->next;
@@ -439,7 +440,7 @@ void ShowCurrentDirectory(){
     }
 }
 
-void ShowDiskImage(){
+void ShowDiskImage()  {
     int freeCount = count_free_blocks();
     printf("Total Blocks: %d\n", NUMBER_OF_BLOCKS);
     printf("Used Blocks: %d\n", usedBlockCount);
@@ -449,10 +450,10 @@ void ShowDiskImage(){
     printf("Disk Usage: %.2f%%\n", usage);
 }
 
-void TerminateProgram(){
-    if (root) {
-        while (root->child) {
-            fileOrDirectoryNode *c = root->child;
+void TerminateProgram()  {
+    if (root)  {
+        while (root->child)  {
+            file_Or_Directory_Node *c = root->child;
             remove_child_node(root, c);
             free_node_recursive(c);
         }
@@ -461,14 +462,14 @@ void TerminateProgram(){
         cwd = NULL;
     }
     freeBlock *p = freeBlocksHead;
-    while(p) {
+    while(p)  {
         freeBlock *n = p->next;
         free(p);
         p = n;
     }
     freeBlocksHead = freeBlocksTail = NULL;
-    if (diskSpace) {
-        for (int i=0;i<NUMBER_OF_BLOCKS;i++) {
+    if (diskSpace)  {
+        for (int i=0;i<NUMBER_OF_BLOCKS;i++)  {
             if (diskSpace[i]) free(diskSpace[i]);
         }
         free(diskSpace);
@@ -477,18 +478,18 @@ void TerminateProgram(){
     printf("Memory released. Exiting program...\n");
 }
 
-void print_pwd() {
-    if (cwd == root) { printf("/\n"); return; }
-    char path[4096] = {0};
-    fileOrDirectoryNode *cur = cwd;
+void print_pwd()  {
+    if (cwd == root)  { printf("/\n"); return; }
+    char path[4096] =  {0};
+    file_Or_Directory_Node *cur = cwd;
     char segments[64][FILE_NAME_MAXIMUM_SIZE];
     int segc = 0;
-    while (cur && cur != root) {
+    while (cur && cur != root)  {
         strncpy(segments[segc++], cur->name, FILE_NAME_MAXIMUM_SIZE-1);
         segments[segc-1][FILE_NAME_MAXIMUM_SIZE-1] = '\0';
         cur = cur->parent;
     }
-    for (int i = segc-1; i >= 0; --i) {
+    for (int i = segc-1; i >= 0; --i)  {
         strcat(path, "/");
         strcat(path, segments[i]);
     }
@@ -496,16 +497,16 @@ void print_pwd() {
     printf("%s\n", path);
 }
 
-int main(){
+int main()  {
     printf("Virtual File System\n");
     diskSpace = (char**) malloc(NUMBER_OF_BLOCKS * sizeof(char*));
-    if (!diskSpace) {
+    if (!diskSpace)  {
         fprintf(stderr, "Failed to allocate diskSpace pointers\n");
         return 1;
     }
-    for(int i=0;i<NUMBER_OF_BLOCKS;i++){
+    for(int i=0;i<NUMBER_OF_BLOCKS;i++) {
         diskSpace[i] = (char*) malloc(BLOCK_SIZE * sizeof(char));
-        if (!diskSpace[i]) {
+        if (!diskSpace[i])  {
             fprintf(stderr, "Failed allocating block %d\n", i);
             for (int j=0;j<i;j++) free(diskSpace[j]);
             free(diskSpace);
@@ -517,11 +518,11 @@ int main(){
     initializeSystem(diskSpace);
 
     char line[MAXIMUM_COMMAND_LENGTH];
-    while(1){
+    while(1) {
         if (cwd == root) printf("/ > ");
         else printf("%s > ", cwd->name);
 
-        if (!readInput(line)) {
+        if (!readInput(line))  {
             printf("\n");
             TerminateProgram();
             break;
@@ -532,30 +533,30 @@ int main(){
         char *token = strtok(cmdline, " ");
         if (!token) continue;
 
-        if (strcmp(token, "mkdir") == 0) {
+        if (strcmp(token, "mkdir") == 0)  {
             mkdir();
-        } else if (strcmp(token, "ls") == 0) {
+        } else if (strcmp(token, "ls") == 0)  {
             ShowCurrentDirectory();
-        } else if (strcmp(token, "create") == 0) {
+        } else if (strcmp(token, "create") == 0)  {
             createFile();
-        } else if (strcmp(token, "write") == 0) {
+        } else if (strcmp(token, "write") == 0)  {
             writeFile();
-        } else if (strcmp(token, "read") == 0) {
+        } else if (strcmp(token, "read") == 0)  {
             readFile();
-        } else if (strcmp(token, "delete") == 0) {
+        } else if (strcmp(token, "delete") == 0)  {
             DeleteFile();
-        } else if (strcmp(token, "rmdir") == 0) {
+        } else if (strcmp(token, "rmdir") == 0)  {
             RemoveDirectory();
-        } else if (strcmp(token, "cd") == 0) {
+        } else if (strcmp(token, "cd") == 0)  {
             changeDirectory();
-        } else if (strcmp(token, "pwd") == 0) {
+        } else if (strcmp(token, "pwd") == 0)  {
             print_pwd();
-        } else if (strcmp(token, "df") == 0) {
+        } else if (strcmp(token, "df") == 0)  {
             ShowDiskImage();
-        } else if (strcmp(token, "exit") == 0) {
+        } else if (strcmp(token, "exit") == 0)  {
             TerminateProgram();
             break;
-        } else {
+        } else  {
             printf("Unknown command: %s\n", token);
             printf("Supported commands: mkdir, ls, create, write, read, delete, rmdir, cd, pwd, df, exit\n");
         }
