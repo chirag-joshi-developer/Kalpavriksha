@@ -135,7 +135,7 @@ void removeChildNode(file_Or_Directory_Node *parent, file_Or_Directory_Node *chi
     child->parent = NULL;
 }
 
-void free_file_node(file_Or_Directory_Node *filenode)  {
+void freeFileNode(file_Or_Directory_Node *filenode)  {
     if (!filenode) return;
     for (int i = 0; i < filenode->totalBlockCOUNT; ++i)  {
         int idx = filenode->blockPointer[i];
@@ -155,7 +155,7 @@ void freeNodeRecursive(file_Or_Directory_Node *node)  {
         }
         free(node);
     } else  {
-        free_file_node(node);
+        freeFileNode(node);
         free(node);
     }
 }
