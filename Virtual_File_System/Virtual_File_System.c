@@ -8,7 +8,7 @@
 #define FILE_NAME_MAXIMUM_SIZE 51
 #define FILE_NAME_MINIMUM_SIZE 1
 #define MAXIMUM_COMMAND_LENGTH 512
-#define MAXIMUM_DATA_LENGTH 512000
+#define MAXIMUM_DATA_LENGTH 524288
 
 typedef struct freeBlock  {
     int index;
@@ -47,11 +47,11 @@ void changeDirectory();
 void createFile();
 void writeFile();
 void readFile();
-void DeleteFile();
-void RemoveDirectory();
-void ShowCurrentDirectory();
-void ShowDiskImage();
-void TerminateProgram();
+void deleteFile();
+void removeDirectory();
+void showCurrentDirectory();
+void showDiskImage();
+void terminateProgram();
 
 char* trim(char *stringToTrim)  {
     if (!stringToTrim) return stringToTrim;
@@ -308,18 +308,18 @@ void createFile()  {
 }
 
 void writeFile()  {
-    char buf_name[MAXIMUM_COMMAND_LENGTH];
-    char buf_content[MAXIMUM_DATA_LENGTH];
+    char bufName[MAXIMUM_COMMAND_LENGTH];
+    char bufContent[MAXIMUM_DATA_LENGTH];
     printf("Enter filename: ");
-    if (!readInput(buf_name))  { printf("Input error\n"); return; }
-    char *name = trim(buf_name);
+    if (!readInput(bufName))  { printf("Input error\n"); return; }
+    char *name = trim(bufName);
     file_Or_Directory_Node *tempFileNode = findChild(cwd, name);
     if (!tempFileNode)  { printf("File '%s' not found.\n", name); return; }
     if (!tempFileNode->isFile)  { printf("'%s' is a directory.\n", name); return; }
 
     printf("Enter content (you may include spaces): ");
-    if (!readInput(buf_content))  { printf("Input error\n"); return; }
-    char *content = buf_content;
+    if (!readInput(bufContent))  { printf("Input error\n"); return; }
+    char *content = bufContent;
 
     int bytes = (int) strlen(content);
     int neededBlocks = blocksNeeded(bytes);
@@ -358,14 +358,14 @@ void writeFile()  {
     int written = 0;
     for (int i=0;i<tempFileNode->totalBlockCOUNT;i++) {
         int idx = tempFileNode->blockPointer[i];
-        int to_write = (bytes - written) > BLOCK_SIZE ? BLOCK_SIZE : (bytes - written);
-        if (to_write > 0)  {
-            memcpy(diskSpace[idx], content + written, (size_t)to_write);
-            if (to_write < BLOCK_SIZE) memset(diskSpace[idx] + to_write, 0, BLOCK_SIZE - to_write);
+        int toWrite = (bytes - written) > BLOCK_SIZE ? BLOCK_SIZE : (bytes - written);
+        if (toWrite > 0)  {
+            memcpy(diskSpace[idx], content + written, (size_t)toWrite);
+            if (toWrite < BLOCK_SIZE) memset(diskSpace[idx] + toWrite, 0, BLOCK_SIZE - toWrite);
         } else  {
             memset(diskSpace[idx], 0, BLOCK_SIZE);
         }
-        written += to_write;
+        written += toWrite;
     }
     tempFileNode->sizeOfTheFile = bytes;
     printf("Data written successfully (size=%d bytes).\n", bytes);
@@ -386,16 +386,16 @@ void readFile()  {
     int remaining = tempFileNode->sizeOfTheFile;
     for (int i=0;i<tempFileNode->totalBlockCOUNT;i++) {
         int idx = tempFileNode->blockPointer[i];
-        int to_read = remaining > BLOCK_SIZE ? BLOCK_SIZE : remaining;
-        if (to_read > 0)  {
-            fwrite(diskSpace[idx], 1, (size_t)to_read, stdout);
-            remaining -= to_read;
+        int toRead = remaining > BLOCK_SIZE ? BLOCK_SIZE : remaining;
+        if (toRead > 0)  {
+            fwrite(diskSpace[idx], 1, (size_t)toRead, stdout);
+            remaining -= toRead;
         }
     }
     printf("\n");
 }
 
-void DeleteFile()  {
+void deleteFile()  {
     char buf[MAXIMUM_COMMAND_LENGTH];
     printf("Enter filename to delete: ");
     if (!readInput(buf))  { printf("Input error\n"); return; }
@@ -413,7 +413,7 @@ void DeleteFile()  {
     printf("File deleted successfully.\n");
 }
 
-void RemoveDirectory()  {
+void removeDirectory()  {
     char buf[MAXIMUM_COMMAND_LENGTH];
     printf("Enter directory name to remove: ");
     if (!readInput(buf))  { printf("Input error\n"); return; }
@@ -427,7 +427,7 @@ void RemoveDirectory()  {
     printf("Directory removed successfully.\n");
 }
 
-void ShowCurrentDirectory()  {
+void showCurrentDirectory()  {
     if (!cwd->child)  {
         printf("(empty)\n");
     } else  {
@@ -440,7 +440,7 @@ void ShowCurrentDirectory()  {
     }
 }
 
-void ShowDiskImage()  {
+void showDiskImage()  {
     int freeCount = countFreeBlocks();
     printf("Total Blocks: %d\n", NUMBER_OF_BLOCKS);
     printf("Used Blocks: %d\n", usedBlockCount);
@@ -450,7 +450,7 @@ void ShowDiskImage()  {
     printf("Disk Usage: %.2f%%\n", usage);
 }
 
-void TerminateProgram()  {
+void terminateProgram()  {
     if (root)  {
         while (root->child)  {
             file_Or_Directory_Node *childPtr = root->child;
@@ -478,7 +478,7 @@ void TerminateProgram()  {
     printf("Memory released. Exiting program...\n");
 }
 
-void print_pwd()  {
+void displayPwd()  {
     if (cwd == root)  { printf("/\n"); return; }
     char path[4096] =  {0};
     file_Or_Directory_Node *Current = cwd;
@@ -524,7 +524,7 @@ int main()  {
 
         if (!readInput(line))  {
             printf("\n");
-            TerminateProgram();
+            terminateProgram();
             break;
         }
         char *cmdline = trim(line);
@@ -536,7 +536,7 @@ int main()  {
         if (strcmp(token, "mkdir") == 0)  {
             mkdir();
         } else if (strcmp(token, "ls") == 0)  {
-            ShowCurrentDirectory();
+            showCurrentDirectory();
         } else if (strcmp(token, "create") == 0)  {
             createFile();
         } else if (strcmp(token, "write") == 0)  {
@@ -544,23 +544,22 @@ int main()  {
         } else if (strcmp(token, "read") == 0)  {
             readFile();
         } else if (strcmp(token, "delete") == 0)  {
-            DeleteFile();
+            deleteFile();
         } else if (strcmp(token, "rmdir") == 0)  {
-            RemoveDirectory();
+            removeDirectory();
         } else if (strcmp(token, "cd") == 0)  {
             changeDirectory();
         } else if (strcmp(token, "pwd") == 0)  {
-            print_pwd();
+            displayPwd();
         } else if (strcmp(token, "df") == 0)  {
-            ShowDiskImage();
+            showDiskImage();
         } else if (strcmp(token, "exit") == 0)  {
-            TerminateProgram();
+            terminateProgram();
             break;
         } else  {
             printf("Unknown command: %s\n", token);
             printf("Supported commands: mkdir, ls, create, write, read, delete, rmdir, cd, pwd, df, exit\n");
         }
     }
-
     return 0;
 }
