@@ -1,2 +1,0 @@
-# Kalpavriksha
-Repository for Kalpavriksha
