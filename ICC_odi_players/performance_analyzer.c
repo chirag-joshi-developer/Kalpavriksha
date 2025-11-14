@@ -81,7 +81,7 @@ static const char* roleTypeToName(int roleType) {
     }
 }
 
-static void initializeTeamsListFromHeader(void) {
+static void initializeTeamsListFromHeader() {
     for (int index = 0; index < NUMBER_OF_TEAMS && index < teamCount; ++index) {
         teamList[index].teamId = index + 1;
         if (teams == NULL || teams[index] == NULL) {
@@ -89,7 +89,7 @@ static void initializeTeamsListFromHeader(void) {
             exit(EXIT_FAILURE);
         }
         if(strncpy(teamList[index].teamName, teams[index], MAXIMUM_TEAM_NAME_LENGTH - 1) == NULL){
-            printf("Player copying failed");
+            printf("team copying failed");
             exit(EXIT_FAILURE);
         }
         if (teamList[index].teamName[0] == '\0') {
@@ -177,7 +177,7 @@ static int addPlayerToTeam(int playerId, const char* playerNameValue, const char
     return 0;
 }
 
-static void initializePlayersFromHeader(void) {
+static void initializePlayersFromHeader() {
     for (int index = 0; index < playerCount; ++index) {
         Player headerPlayer = players[index];
 
@@ -250,7 +250,7 @@ static int teamCompareForQsort(const void* a, const void* b) {
     return 0;
 }
 
-static void printTeamsByAverageStrikeRate(void) {
+static void displayTeamsByAverageStrikeRate() {
     team tempArray[NUMBER_OF_TEAMS];
     for (int index = 0; index < NUMBER_OF_TEAMS; ++index) {
         tempArray[index] = teamList[index];
@@ -273,7 +273,7 @@ static void printTeamsByAverageStrikeRate(void) {
     printf("===========================================================\n");
 }
 
-static void displayTopKPlayersOfTeamByRole(void) {
+static void displayTopKPlayersOfTeamByRole() {
     printf("Enter Team ID: ");
     int userTeamId = 0;
     if (scanf("%d", &userTeamId) != 1) {
@@ -358,7 +358,7 @@ static void heapifyDown(heapNode heapArray[], int heapSize, int rootIndex) {
     }
 }
 
-static void displayAllPlayersOfRoleAcrossTeams(void) {
+static void displayAllPlayersOfRoleAcrossTeams() {
     printf("Role (1-Batsman, 2-All-Rounder, 3-Bowler): ");
     int userRole = 0;
     if (scanf("%d", &userRole) != 1 || userRole < 1 || userRole > 3) {
@@ -430,7 +430,7 @@ static void displayAllPlayersOfRoleAcrossTeams(void) {
     printf("=========================================================================================================\n");
 }
 
-static void interactiveAddNewPlayer(void) {
+static void interactiveAddNewPlayer() {
     printf("Enter Team ID to add player: ");
     int teamIdInput = 0;
     if (scanf("%d", &teamIdInput) != 1) {
@@ -534,7 +534,7 @@ static void freeAllPlayers(player* head) {
     }
 }
 
-static void freeAllAllocatedMemory(void) {
+static void freeAllAllocatedMemory() {
     for (int index = 0; index < NUMBER_OF_TEAMS; ++index) {
         freeAllPlayers(teamList[index].playerHead);
         teamList[index].playerHead = NULL;
@@ -545,7 +545,7 @@ static void freeAllAllocatedMemory(void) {
     }
 }
 
-int main(void) {
+int main() {
     srand((unsigned int)time(NULL));
 
     initializeTeamsListFromHeader();
@@ -578,7 +578,7 @@ int main(void) {
                 displayPlayersOfSpecificTeamById();
                 break;
             case 3:
-                printTeamsByAverageStrikeRate();
+                displayTeamsByAverageStrikeRate();
                 break;
             case 4:
                 displayTopKPlayersOfTeamByRole();
@@ -588,7 +588,7 @@ int main(void) {
                 break;
             case 6:
                 freeAllAllocatedMemory();
-                printf("Exiting program. Goodbye.\n");
+                printf("Exiting program. \n");
                 return 0;
             default:
                 printf("Invalid choice. Try again.\n");
