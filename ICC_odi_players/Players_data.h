@@ -11,9 +11,9 @@ typedef struct {
     float strikeRate;
     int wickets;
     float economyRate;
-} Player;
+} PlayerData;
 
-static const Player players[] = {
+static const PlayerData players[] = {
     {707, "Gulbadin Naib", "Afghanistan", "All-rounder", 1200, 22.5, 83.5, 65, 5.3},
     {718, "Sharafuddin Ashraf", "Afghanistan", "All-rounder", 450, 22.5, 74.3, 40, 4.9},
     {713, "Mujeeb Ur Rahman", "Afghanistan", "Bowler", 250, 10.9, 66.3, 95, 4.4},
