@@ -24,10 +24,9 @@ typedef struct Player {
     int playerId;
     char playerName[MAXIMUM_PLAYER_NAME_LENGTH];
     char playerTeamName[MAXIMUM_TEAM_NAME_LENGTH];
+
     PlayerType playerType; 
-    //1 Batsman
-    //2 All-rounder
-    //3 Bowler 
+    
     int totalRuns;
     float battingAverage;
     float strikeRate;
@@ -49,10 +48,10 @@ typedef struct Team {
     struct Player* playerHead;
 } Team ;
 
-typedef struct heapNode {
+typedef struct HeapNode {
     Player* playerPointer;
     int teamIndex;
-} heapNode;
+} HeapNode;
 
 Team teamList[NUMBER_OF_TEAMS];
 int* allPlayersId;
@@ -141,7 +140,7 @@ static void initializeTeamsListFromHeader() {
     }
 }
 
-static void insertPlayerSortedByPerformanceIndex(Team* destinationTeam, Player* newPlayer) {
+static void insertPlayerAndSortByPerformanceIndex(Team* destinationTeam, Player* newPlayer) {
     
     if (destinationTeam == NULL || newPlayer == NULL) return;
     Player** indirect = &destinationTeam->playerHead;
@@ -157,7 +156,6 @@ static void insertPlayerSortedByPerformanceIndex(Team* destinationTeam, Player* 
         destinationTeam->teamAverageBattingStrikeRate = destinationTeam->strikeRateSum / (float)destinationTeam->strikeRateCount;
     }
 }
-
 
 Team* findTeamById(int teamId) {
     if (teamId < 1 || teamId > NUMBER_OF_TEAMS) {
@@ -213,7 +211,7 @@ static int addPlayerToTeam(int playerId, const char* playerNameValue, const char
     createdPlayer->performanceIndex = computePerformanceIndexFromFields(playerTypeValue, battingAverageValue, strikeRateValue, totalWicketsValue, economyRateValue);
     createdPlayer->next = NULL;
 
-    insertPlayerSortedByPerformanceIndex(destinationTeam, createdPlayer);
+    insertPlayerAndSortByPerformanceIndex(destinationTeam, createdPlayer);
     int index = currentPlayerCount;
     while(index >= 0 && allPlayersId[index] > playerId){
         allPlayersId[index+1] = allPlayersId[index];
@@ -383,13 +381,13 @@ static void displayTopKPlayersOfTeamByRole() {
     printf("=========================================================================================================\n");
 }
 
-static void swapHeapNodes(heapNode* a, heapNode* b) {
-    heapNode temp = *a;
+static void swapHeapNodes(HeapNode* a, HeapNode* b) {
+    HeapNode temp = *a;
     *a = *b;
     *b = temp;
 }
 
-static void heapifyDown(heapNode heapArray[], int heapSize, int rootIndex) {
+static void heapifyDown(HeapNode heapArray[], int heapSize, int rootIndex) {
     int largestIndex = rootIndex;
     int leftChildIndex = 2 * rootIndex + 1;
     int rightChildIndex = 2 * rootIndex + 2;
@@ -415,7 +413,7 @@ static void displayAllPlayersOfRoleAcrossTeams() {
         return;
     }
 
-    heapNode initialHeap[NUMBER_OF_TEAMS];
+    HeapNode initialHeap[NUMBER_OF_TEAMS];
     int heapSize = 0;
     for (int index = 0; index < NUMBER_OF_TEAMS; ++index) {
         Player* candidate = teamList[index].playerHead;
@@ -444,7 +442,7 @@ static void displayAllPlayersOfRoleAcrossTeams() {
     printf("=========================================================================================================\n");
 
     while (heapSize > 0) {
-        heapNode topNode = initialHeap[0];
+        HeapNode topNode = initialHeap[0];
         Player* printedPlayer = topNode.playerPointer;
         int teamIdx = topNode.teamIndex;
 
