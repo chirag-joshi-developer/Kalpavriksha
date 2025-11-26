@@ -144,7 +144,7 @@ static void mapPut(HashMap* map, int key, QNode* targetNode){
     map->buckets[index] = hNode;
 }
 
-static QNode* mapGet(HashMap* map,int key){
+static QNode* getNodeFromMap(HashMap* map,int key){
     if(map == NULL){
         return NULL;
     }
@@ -159,7 +159,7 @@ static QNode* mapGet(HashMap* map,int key){
     return NULL;
 }
 
-static void mapRemove(HashMap* map, int key){
+static void removeNodeFromMap(HashMap* map, int key){
     if(map ==  NULL){
         return;
     }
@@ -244,7 +244,7 @@ char* get(int key){
         return NULL;
     }
 
-    QNode* node = mapGet(lruCache->map,key);
+    QNode* node = getNodeFromMap(lruCache->map,key);
     if(node != NULL){
         detachNode(lruCache->Queue,node);
         enqueueFront(lruCache->Queue,node);
@@ -259,7 +259,7 @@ void put(int key,const char* value){
         return;
     }
 
-    QNode *existingNode = mapGet(lruCache->map,key);
+    QNode *existingNode = getNodeFromMap(lruCache->map,key);
 
     if(existingNode != NULL){
         strncpy(existingNode->value, value, MAXIMUM_VALUE_LENGTH - 1);
@@ -275,7 +275,7 @@ void put(int key,const char* value){
         QNode* lruNode = popTail(lruCache->Queue);
         if(lruNode != NULL){
             printf("Evicting key: %d\n",lruNode->key);
-            mapRemove(lruCache->map,lruNode->key);
+            removeNodeFromMap(lruCache->map,lruNode->key);
             free(lruNode);
         }
     }
@@ -327,8 +327,7 @@ static void insertGet(){
     printf("\nEnter the key: ");
     while (scanf("%d", &key) != 1) {
         printf("\nKey should be numeric\n");
-        while ((ch = getchar()) != '\n' && ch != EOF)
-            ;
+        while ((ch = getchar()) != '\n' && ch != EOF);
 
         printf("Enter the key: ");
     }
@@ -362,7 +361,7 @@ int main(){
         printf("2. for get\n");
         printf("3. for exit\n");
 
-        printf("\nEnter choice:");
+        printf("Enter choice:");
 
         while (scanf("%d", &choice) != 1) {
             printf("\nChoice should be numeric value\n");
