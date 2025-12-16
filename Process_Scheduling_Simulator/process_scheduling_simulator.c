@@ -312,6 +312,13 @@ void addProcess(Scheduler *scheduler, char *name, int processId, int processBurs
         printf("Max processes reached\n");
         return;
     }
+    if (hashMapGetProcess(scheduler->pidToProcessMap, processId) != NULL)
+    {
+        fprintf(stderr,
+                "Error: Duplicate PID %d detected. Process ignored.\n",
+                processId);
+        return;
+    }
     ProcessControlBlock *newProcess = initializeProcess(name, processId, processBurstTime, ioStart, ioDuration);
     scheduler->allProcesses[scheduler->processCount++] = newProcess;
     insertValueHashMap(scheduler->pidToProcessMap, processId, newProcess);
@@ -565,7 +572,6 @@ int main()
             }
             else
             {
-                sleep(1);
                 currNode->executionTime += 1;
 
                 if (currNode->ioStartTime > 0 && currNode->executionTime == currNode->ioStartTime)
@@ -584,10 +590,6 @@ int main()
                     scheduler->terminatedProcessCount++;
                 }
             }
-        }
-        else
-        {
-            sleep(1);
         }
 
         updateWaitingQueue(scheduler);
