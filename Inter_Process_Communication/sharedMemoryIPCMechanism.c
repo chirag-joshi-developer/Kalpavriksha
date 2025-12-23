@@ -16,7 +16,7 @@ void sortArray(SharedData* data){
     for(int i = 1; i < data->arraySize; i++){
         int key = data->array[i];
         int j = i-1;
-        while(j >= 0 && data->array[i] > key){
+        while(j >= 0 && data->array[j] > key){
             data->array[j+1] = data->array[j];
             j--;
         }
@@ -24,14 +24,14 @@ void sortArray(SharedData* data){
     }
 }
 
-void displayArray(ShareData* data){
+void displayArray(SharedData* data){
     for(int i = 0;i < data->arraySize ; i++){
         printf("%d ",data->array[i]);
     }
     printf("\n");
 }
 
-int readArray(ShareData* data){
+int readArray(SharedData* data){
     printf("Enter number of elements :\n");
     scanf("%d",&data->arraySize);
 
@@ -57,7 +57,7 @@ void childTask(SharedData* data){
 
 void releaseSharedData(SharedData* data, int sharedMemoryIdentifier){
     shmdt(data);
-    shmctl(shmId, IPC_RMID, NULL);
+    shmctl(sharedMemoryIdentifier, IPC_RMID, NULL);
 }
 
 SharedData* initializeSharedData(int *sharedMemoryIdentifier){
@@ -86,20 +86,20 @@ void executeSharedMemoryIPC(){
         return;
     }
     
-    printf("\n Parent Process \n");
+    printf("\nParent Process \n");
     printf("Array before sorting :\n");
     displayArray(data);
 
     pid_t pid = fork();
 
     if(pid == 0){
-        printf("\n Child Process \n");
-        ChildTask(data);
+        printf("\nChild Process \n");
+        childTask(data);
         exit(0);
     }
     else if(pid > 0){
         wait(NULL);
-        printf("\n Parent Process\n");
+        printf("\nParent Process\n");
         printf("Array after sorting \n");
         displayArray(data);
     }

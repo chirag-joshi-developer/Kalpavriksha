@@ -40,7 +40,7 @@ void sortArray(PipePacket* packet){
     for(int i = 1; i < packet->arraySize; i++){
         int key = packet->array[i];
         int j = i-1;
-        while(j >= 0 && packet->array[i] > key){
+        while(j >= 0 && packet->array[j] > key){
             packet->array[j+1] = packet->array[j];
             j--;
         }
@@ -48,7 +48,7 @@ void sortArray(PipePacket* packet){
     }
 }
 
-void parentRoutine(int toChild, int fromChild, PipePacket* packet){
+void parentRoutine(int toChild[], int fromChild[], PipePacket* packet){
     close(toChild[0]);
     close(fromChild[1]);
 
@@ -82,11 +82,11 @@ void childRoutine(int fromParent[], int toParent[]){
 void executePipeIPC(){
     PipePacket packet;
 
-    if(readInput(&packet) == -1){
+    if(readArray(&packet) == -1){
         return ;
     }
 
-    printf("\n Parent Process \n");
+    printf("\nParent Process \n");
     printf("Array before sorting : \n");
     displayArray(&packet);
 
@@ -101,7 +101,7 @@ void executePipeIPC(){
     pid_t pid = fork();
 
     if(pid == 0){
-        printf("\n Child process \n");
+        printf("\nChild process \n");
         childRoutine(parentToChild, childToParent);
         exit(0);
     }
@@ -109,7 +109,7 @@ void executePipeIPC(){
         parentRoutine(parentToChild, childToParent, &packet);
         wait(NULL);
 
-        printf("\n parent Process \n");
+        printf("\nparent Process \n");
         printf("Array after sorting: \n");
         displayArray(&packet);
     }

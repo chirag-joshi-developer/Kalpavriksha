@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<unistd.h>
+#include <sys/msg.h>
 #include<sys/wait.h>
 #include<sys/ipc.h>
 #include<sys/wait.h>
@@ -27,7 +28,7 @@ void sortArray(MessagePacket* packet){
     for(int i = 1; i < packet->arraySize; i++){
         int key = packet->array[i];
         int j = i-1;
-        while(j >= 0 && packet->array[i] > key){
+        while(j >= 0 && packet->array[j] > key){
             packet->array[j+1] = packet->array[j];
             j--;
         }
@@ -39,26 +40,26 @@ int initializeMessageQueue(){
     int messageId = msgget(IPC_PRIVATE, IPC_CREAT | 0666);
     if(messageId == -1){
         printf("Message Queue creation failure \n");
-        return 0;
+        return -1;
     }
-    return 1;
+    return messageId;
 }
 
-void destroyMessageQueue(){
-    msgctl(msgId,IPC_RMID,NULL);
+void destroyMessageQueue(int messageId){
+    msgctl(messageId, IPC_RMID, NULL);
 }
 
 int pushMessage(int messageId, MessagePacket* packet){
-    if(msgsnd(msgId, packet, sizeof(MessagePacket) - sizeof(long),0) == -1){
-        printf("Message send failure \n");
+    if(msgsnd(messageId, packet, sizeof(MessagePacket) - sizeof(long), 0) == -1){
+        printf("Message send failure\n");
         return 0;
     }
     return 1;
 }
 
 int pullMessage(int messageId, MessagePacket* packet, long type){
-    if(msgrcv(msgId, packet, sizeof(MessagePacket) - sizeof(long), type,0) == -1){
-        printf("Message receive failure \n");
+    if(msgrcv(messageId, packet, sizeof(MessagePacket) - sizeof(long), type, 0) == -1){
+        printf("Message receive failure\n");
         return 0;
     }
     return 1;
@@ -97,7 +98,7 @@ void messageQueueIPCSorting(){
         return;
     }
 
-    printf("\n Parent Process \n");
+    printf("\nParent Process \n");
     printf("Array before sorting \n");
 
     displayArray(&packet);
@@ -115,7 +116,7 @@ void messageQueueIPCSorting(){
             exit(1);
         }
 
-        printf("\n Child Process \n");
+        printf("\nChild Process \n");
         printf("Sorting Array\n");
         sortArray(&packet);
         packet.messageType = TO_PARENT;
@@ -131,7 +132,7 @@ void messageQueueIPCSorting(){
             return;
         }
 
-        printf("\n Parent Process \n");
+        printf("\nParent Process \n");
         printf("Array after sorting:\n");
         displayArray(&packet);
     }

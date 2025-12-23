@@ -7,7 +7,7 @@
 
 #define SERVER_PORT 8080
 #define BUFFER_SIZE 1024
-#define ACCOUNT_FILE "../resource/accountDB.txt"
+#define ACCOUNT_FILE "resource/accountDB.txt"
 
 #define WITHDRAW_OPERATION 1
 #define DEPOSITE_OPERATION 2
@@ -20,28 +20,28 @@ pthread_mutex_t balanceMutex = PTHREAD_MUTEX_INITIALIZER;
 
 typedef struct ClientData{
     int socketFd;
-    int clinetNumber;
+    int clientNumber;
 }ClientData;
 
-flaot readAccountBalance(){
-    FILE* file = fopen(ACCOUNT_FILE,"r");
-    flaot balance;
+float readAccountBalance(){
+    FILE* file = fopen(ACCOUNT_FILE, "r");
+    float balance = INITIAL_BALANCE;
 
-    if(!file){
-        file = fopen(ACCOUNT_FILE,"w");
-        if(!file){
-            return INITIAL_BALANCE;
-        }
-        fprintf(file,"%.2f",INITIAL_BALANCE);
-        fclose(file);
+    if (!file) {
+        perror("Failed to open account file");
         return INITIAL_BALANCE;
     }
-    fscanf(file, "%f", &balance);
+
+    if (fscanf(file, "%f", &balance) != 1) {
+        balance = INITIAL_BALANCE;
+    }
+
     fclose(file);
     return balance;
 }
 
-void writeAccountBalance(flaot balance){
+
+void writeAccountBalance(float balance){
     FILE* file = fopen(ACCOUNT_FILE,"w");
     if(!file){
         return;
@@ -51,41 +51,36 @@ void writeAccountBalance(flaot balance){
 }
 
 void handleWithdraw(int socketFd, float amount){
-    char response(BUFFER_SIZE);
+    char response[BUFFER_SIZE];
     pthread_mutex_lock(&balanceMutex);
     float currentBalance = readAccountBalance();
     if(amount <= 0){
-        snprintf(response,BUFFER_SIZE,"Failed: Invalid amount \n");
+        snprintf(response, BUFFER_SIZE,"Failed: Invalid amount \n");
     }
     else if(amount > currentBalance){
-        snprintf(response,BUFFER_SIZE,"
-            Failed: Insufficient balance. Current: %",
+        snprintf(response, BUFFER_SIZE,"Failed: Insufficient balance. Current: %.2f",
         currentBalance);
     }
     else{
         float newBalance = currentBalance - amount;
         writeAccountBalance(newBalance);
-        sprintf(response,BUFFER_SIZE,
-        "Success: withdraw %.2f | Balance: %2.f",
-        amount,newBalance);
+        snprintf(response, BUFFER_SIZE,"Success: withdraw %.2f | Balance: %.2f", amount, newBalance);
     }
-    pthread_mutex_unlock(&balnceMutex);
+    pthread_mutex_unlock(&balanceMutex);
     send(socketFd,response,strlen(response),0);
 }
 
-void handleDeposit(int socketFd, flaot amount){
+void handleDeposit(int socketFd, float amount){
     char response[BUFFER_SIZE];
     pthread_mutex_lock(&balanceMutex);
     if(amount <= 0){
-        sprintf(response, BUFFER_SIZE,"Failed: Invalid Amount \n");
+        snprintf(response, BUFFER_SIZE,"Failed: Invalid Amount \n");
     }
     else{
         float currentBalance = readAccountBalance();
         float newBalance = currentBalance + amount;
         writeAccountBalance(newBalance);
-        sprintf(response, BUFFER_SIZE, "
-            Success : Deposited %.2f | Balance: %.2f",
-        amount,newBalnce);
+        snprintf(response, BUFFER_SIZE, "Success : Deposited %.2f | Balance: %.2f", amount, newBalance);
     }
     pthread_mutex_unlock(&balanceMutex);
     send(socketFd,response,strlen(response),0);
@@ -99,10 +94,10 @@ void handleBalanceQuery(int socketFd){
     pthread_mutex_unlock(&balanceMutex);
     
     snprintf(response,BUFFER_SIZE,"Current Balance: %.2f",balance);
-    send(socketFd, response, strlne(response), 0);
+    send(socketFd, response, strlen(response), 0);
 }
 
-void processClientCommand(int socketFd, char* buffer){
+int processClientCommand(int socketFd, char* buffer){
     int operation;
     float amount = 0.0f;
 
@@ -118,7 +113,7 @@ void processClientCommand(int socketFd, char* buffer){
             break;
         case BALANCE_CHECK_OPERATION:
             handleBalanceQuery(socketFd);
-            breadk;
+            break;
         case EXIT_OPERATION:
             return 0;
         default:
@@ -128,7 +123,7 @@ void processClientCommand(int socketFd, char* buffer){
 }
 
 void *clientHandler(void * context){
-    cleintData * client = (ClientData*) data;
+    ClientData *client = (ClientData *)context;
     char buffer[BUFFER_SIZE];
 
     while(1){
@@ -146,13 +141,13 @@ void *clientHandler(void * context){
     pthread_exit(NULL);
 }
 
-void initializeServerSocket(){
+int initializeServerSocket(){
     int serverFd = socket(AF_INET, SOCK_STREAM, 0);
     if(serverFd < 0){
         return -1;
     }
     int reuse = 1;
-    setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDER, &reuse, sizeof(reuse));
+    setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
     return serverFd;
 }
 
@@ -174,30 +169,30 @@ void runServer(){
     }
     printf("ATM server listening on port %d \n",SERVER_PORT);
 
-    int clinetCounter = 0;
+    int clientCounter = 0;
 
     while(1){
-        struct sockadder_in clientAddr;
+        struct sockaddr_in clientAddr;
         socklen_t addrLen = sizeof(clientAddr);
 
-        int clientFd = accept(serverFd,(struct sockaddr*)& clientAddr,&&addrLen);
+        int clientFd = accept(serverFd,(struct sockaddr*)& clientAddr,&addrLen);
         if(clientFd<0){
             continue;
         }
         ClientData * context = malloc(sizeof(ClientData));
         context->socketFd = clientFd;
-        context->clientNumber = ++clinetCounter;
+        context->clientNumber = ++clientCounter;
 
         pthread_t threadId;
         if(pthread_create(&threadId, NULL, clientHandler, context) == 0){
             pthread_detach(threadId);
         }
         else{
-            clsoe(clientFd);
+            close(clientFd);
             free(context);
         }
     }
-    clsoe(serverFd);
+    close(serverFd);
 }
 
 int main(){

@@ -17,7 +17,7 @@
 #define MAX_OPTION 4
 
 void displayMenu(){
-    printf("\n ----------------------- \n");
+    printf("\n-----------------------\n");
     printf("ATM MENU \n");
     printf("-------------------------\n");
     printf("1. Withdraw\n");
@@ -64,7 +64,7 @@ int buildRequest(int choice, char* buffer){
     if(choice == WITHDRAW_OPERATION || choice == DEPOSITE_OPERATION){
         amount = readAmount();
     }
-    sprintf(buffer,"%d %.2f", choice, amoutn);
+    sprintf(buffer,"%d %.2f", choice, amount);
     if(choice == EXIT_OPERATION){
         return 0;
     }
@@ -72,7 +72,7 @@ int buildRequest(int choice, char* buffer){
 }
 
 int initializeClientSocket(){
-    int socketFd = soceket(AF_INET, SOCK_STREAM, 0);
+    int socketFd = socket(AF_INET, SOCK_STREAM, 0);
     if(socketFd < 0){
         printf(" Socket creation failure \n");
     }
@@ -83,9 +83,9 @@ int connectToServer(int socketFd){
     struct sockaddr_in serverAddr = {0};
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(SERVER_PORT);
-    serverAddr.sin_add.s_addr = inet_addr("127.0.0.1");
+    serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-    if(connect(socketFd, struct(sockaddr*)&serverAddr,sizeof(serverAddr)) < 0){
+    if(connect(socketFd, (struct sockaddr*)&serverAddr,sizeof(serverAddr)) < 0){
         printf("Failed to connect to server \n");
         return 0;
     }
@@ -109,7 +109,7 @@ void readResponse(int socketFd){
 }
 
 void runClientSession(int socketFd){
-    char buffer{BUFFER_SIZE};
+    char buffer[BUFFER_SIZE];
     while(1){
         displayMenu();
         int choice = readMenuChoice();
@@ -125,15 +125,15 @@ void runClientSession(int socketFd){
 }
 
 int main(){
-    int cliednFd = initializeClientSocket();
-    if(cliednFd < 0){
+    int clientFd = initializeClientSocket();
+    if(clientFd < 0){
         return 0;
     }
-    if(connectToServer(cliednFd) == 0){
-        close(cliednFd);
-        reutrn 0;
+    if(connectToServer(clientFd) == 0){
+        close(clientFd);
+        return 0;
     }
-    runClientSession(cliednFd);
-    close(cliednFd);
+    runClientSession(clientFd);
+    close(clientFd);
     return 0;
 }

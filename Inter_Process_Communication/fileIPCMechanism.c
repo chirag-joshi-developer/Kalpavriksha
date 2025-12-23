@@ -40,7 +40,7 @@ void sortArray(FileData* data){
     for(int i = 1; i < data->arraySize; i++){
         int key = data->array[i];
         int j = i-1;
-        while(j >= 0 && data->array[i] > key){
+        while(j >= 0 && data->array[j] > key){
             data->array[j+1] = data->array[j];
             j--;
         }
@@ -80,17 +80,17 @@ void sortingFileIPC(){
         return;
     }
 
-    printf("\n Process 1: Parent process\n");
+    printf("\nProcess 1: Parent process\n");
     printf("Array before sorting \n");
     displayArray(&data);
 
     writeToFile(&data);
     printf("Data is written to file: %s \n",FILE_NAME);
-
+    fflush(stdout); 
     pid_t processId = fork();
 
     if(processId == 0){
-        printf("\n Process 2: child process \n");
+        printf("\nProcess 2: child process \n");
         readFromFile(&data);
         sortArray(&data);
         writeToFile(&data);
@@ -99,7 +99,7 @@ void sortingFileIPC(){
     }
     else if(processId > 0){
         wait(NULL);
-        printf("\n Process 1: parent process \n");
+        printf("\nProcess 1: parent process \n");
         readFromFile(&data);
 
         printf("Array after sorting :\n");
